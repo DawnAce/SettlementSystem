@@ -1,0 +1,153 @@
+﻿<div id="app">
+    <template>
+        <el-button v-on:click="resetDateFilter">清除日期过滤器</el-button>
+        <el-button v-on:click="clearFilter">清除所有过滤器</el-button>
+        <el-table ref="filterTable"
+                  :data="tableData"
+                  border
+                  v-on:filter-change="reformData"
+                  style="width: 100%">
+            <el-table-column prop="date"
+                             label="日期"
+                             column-key="date"
+                             width="180"
+                             :filters="dateFilters"
+                             :filter-method="filterHandler">
+            </el-table-column>
+            <el-table-column prop="name"
+                             label="姓名"
+                             width="180">
+            </el-table-column>
+            <el-table-column prop="address"
+                             label="地址">
+            </el-table-column>
+            <el-table-column prop="type"
+                             label="属于"
+                             width="100"
+                             :filters="typeFilters"
+                             :filter-method="filterType"
+                             filter-placement="bottom-end">
+            </el-table-column>
+        </el-table>
+        <el-pagination 
+            v-on:size-change="handleSizeChange"
+            v-on:current-change="handleCurrentChange"
+            :current-page="1"
+            :page-sizes="[defaultSize, 10, 50, 100]"
+            :page-size="1"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="total">
+        </el-pagination>
+    </template>
+</div>
+<script>
+    var tableData = [{
+            date: '2016-05-03',
+            name: '王小虎',
+            address: '上海市普陀区金沙江路 1518 弄',
+            type: "第三医院"
+        }, {
+            date: '2016-05-02',
+            name: '王小虎',
+            address: '上海市普陀区金沙江路 1518 弄',
+            type: "第一医院"
+        }, {
+            date: '2016-05-04',
+            name: '王小虎',
+            address: '上海市普陀区金沙江路 1518 弄',
+            type: "第二医院"
+        }, {
+            date: '2016-05-01',
+            name: '王小虎',
+            address: '上海市普陀区金沙江路 1518 弄',
+            type: "第一医院"
+        }, {
+            date: '2016-05-08',
+            name: '王小虎',
+            address: '上海市普陀区金沙江路 1518 弄',
+            type: "第一医院"
+        }, {
+            date: '2016-05-06',
+            name: '王小虎',
+            address: '上海市普陀区金沙江路 1518 弄',
+            type: "第三医院"
+        }, {
+            date: '2016-05-07',
+            name: '王小虎',
+            address: '上海市普陀区金沙江路 1518 弄',
+            type: "第二医院"
+        }];
+
+    var dateFilters = [{
+            text: '2016-05-01',
+            value:'2016-05-01'
+        }, {
+            text: '2016-05-02',
+            value:'2016-05-02'
+        }, {
+            text: '2016-05-03',
+            value:'2016-05-03'
+        }, {
+            text: '2016-05-04',
+            value:'2016-05-04'
+        }]
+
+    var typeFilters = [{
+            text: '第一医院', value: '第一医院'
+        }, {
+            text: '第二医院', value: '第二医院'
+        }, {
+            text: '第三医院', value: '第三医院'
+        }]
+
+    var defaultPageSize = 1
+    var initData = tableData.slice(0, defaultPageSize)
+    var selectDates = new Set();
+    var selectTypes = new Set();
+
+    var Main = {
+        data() {
+          return {
+            tableData: initData,
+            dateFilters: dateFilters,
+            typeFilters: typeFilters,
+            total: tableData.length,
+            defaultSize: defaultPageSize
+          }
+        },
+        methods: {
+            resetDateFilter() {
+                this.$refs.filterTable.clearFilter('date');
+            },
+            clearFilter() {
+                this.$refs.filterTable.clearFilter();
+            },
+            formatter(row, column) {
+                return row.address;
+            },
+            filterType(value, row) {
+                selectTypes.add(value)
+                return row.type === value;
+            },
+            filterHandler(value, row, column) {
+                const property = column['property'];
+                selectDates.add(value)
+                return row[property] === value;
+            },
+            handleSizeChange(val) {
+                this.tableData = tableData.slice(0, val);
+            },
+            handleCurrentChange(val) {
+                var start = (val - 1) * 1
+                var end = start + 1;
+                this.tableData = tableData.slice(start, end)
+            },
+            reformData(key, val) {
+                var currentData = tableData.filter(item => item[key] == val)
+                this.tableData = currentData
+            }
+        }
+    }
+    var Ctor = Vue.extend(Main)
+    new Ctor().$mount('#app')
+</script>

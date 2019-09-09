@@ -1,0 +1,153 @@
+﻿<div id="app">
+    <template>
+        <el-table ref="rulesTable"
+                    :data="tableData"
+                    border
+                    row-key="id"
+                    :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
+                    style="width: 100%">
+            <el-table-column property="mc"
+                             label="医院名称"
+                             sortable>
+            </el-table-column>
+            <el-table-column prop="ks"
+                             label="科室">
+            </el-table-column>
+            @*Ladder price or normal price*@
+            <el-table-column prop="jslx"
+                             label="结算类型(普通/阶梯)">
+            </el-table-column>
+            <el-table-column prop="wjzje"
+                             label="未就诊金额">
+            </el-table-column>
+            <el-table-column prop="qxje"
+                             label="取消金额">
+            </el-table-column>
+            <el-table-column prop="dzje"
+                             label="到诊金额">
+            </el-table-column>
+        </el-table>
+    </template>
+</div>
+<script>
+    var originData = [{
+            id: "002001",
+            mc: "长峰医院",
+            ks: "血管外科",
+            jslx: "普通",
+            wjzje: 0,
+            qxje: 0,
+            dzje: 300
+        }, {
+            id: "002002",
+            mc: "长峰医院",
+            ks: "血管瘤",
+            jslx: "普通",
+            wjzje: 0,
+            qxje: 0,
+            dzje: 300
+        }, {
+            id: "002003",
+            mc: "长峰医院",
+            ks: "男科",
+            jslx: "普通",
+            wjzje: 0,
+            qxje: 0,
+            dzje: 240
+        },{
+            id: "002004",
+            mc: "长峰医院",
+            ks: "泌尿",
+            jslx: "普通",
+            wjzje: 0,
+            qxje: 0,
+            dzje: 240
+        },{
+            id: "002005",
+            mc: "长峰医院",
+            ks: "妇科",
+            jslx: "普通",
+            wjzje: 0,
+            qxje: 0,
+            dzje: 240
+        },{
+            id: "002006",
+            mc: "长峰医院",
+            ks: "内分泌",
+            jslx: "普通",
+            wjzje: 0,
+            qxje: 0,
+            dzje: 120
+        },{
+            id: "002007",
+            mc: "长峰医院",
+            ks: "糖尿",
+            jslx: "普通",
+            wjzje: 0,
+            qxje: 0,
+            dzje: 120
+        },{
+            id: "002008",
+            mc: "长峰医院",
+            ks: "甲状腺",
+            jslx: "普通",
+            wjzje: 0,
+            qxje: 0,
+            dzje: 120
+        },{
+            id: "002009",
+            mc: "长峰医院",
+            ks: "心血管",
+            jslx: "普通",
+            wjzje: 0,
+            qxje: 0,
+            dzje: 120
+        },{
+            id: "002010",
+            mc: "长峰医院",
+            ks: "神内",
+            jslx: "普通",
+            wjzje: 0,
+            qxje: 0,
+            dzje: 120
+        },{
+            id: "002011",
+            mc: "长峰医院",
+            ks: "中医",
+            jslx: "普通",
+            wjzje: 0,
+            qxje: 0,
+            dzje: 120
+        }
+    ]
+
+    var Main = {
+        data() {
+            return {
+                tableData: this.formatData(originData)
+            }
+        },
+        methods: {
+            //Merge the same items
+            formatData(data) {
+                var m = new Map();
+                data.forEach((item, index) => {
+                    var key = item.mc + ";" + item.jslx + ";" + item.wjzje + ";" + item.qxje + ";" + item.dzje
+                    if (m.has(key)) {
+                        m.get(key).ks += "、" + item.ks
+                    } else {
+                        m.set(key, Object.assign({}, item))
+                    }
+                })
+
+                var tempData = new Array()
+                m.forEach(function (value, key, map) {
+                    tempData.push(value)
+                })
+                return tempData
+            }
+        }
+    }
+    var Ctor = Vue.extend(Main)
+    new Ctor().$mount('#app')
+</script>

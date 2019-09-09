@@ -20,7 +20,17 @@ namespace SettlementSystem.Controllers
             return View();
         }
 
+        public IActionResult Query()
+        {
+            return View();
+        }
+
         public IActionResult Calculate()
+        {
+            return View();
+        }
+
+        public IActionResult Rules()
         {
             return View();
         }

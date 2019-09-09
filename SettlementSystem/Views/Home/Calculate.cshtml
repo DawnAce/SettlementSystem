@@ -1,42 +1,46 @@
-﻿<div id="app">
+﻿@{
+    ViewData["Title"] = "Calculate Page";
+}
+
+<div id="app">
     <template>
         <el-table ref="hospitalTable"
-                    :data="tableData"
-                    border
-                    :summary-method="getSummaries"
-                    show-summary
-                    lazy
-                    row-key="id"
-                    :load="load"
-                    :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
-                    style="width: 100%">
+                  :data="tableData"
+                  border
+                  :summary-method="getSummaries"
+                  show-summary
+                  lazy
+                  row-key="id"
+                  :load="load"
+                  :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
+                  style="width: 100%">
             <el-table-column property="mc"
-                                label="医院名称"
-                                sortable
-                                width="200">
+                             label="医院名称"
+                             sortable
+                             width="200">
             </el-table-column>
             <el-table-column prop="wjzl"
-                                sortable
-                                label="未就诊量">
+                             sortable
+                             label="未就诊量">
             </el-table-column>
             <el-table-column prop="qxl"
-                                sortable
-                                label="取消量">
+                             sortable
+                             label="取消量">
             </el-table-column>
             <el-table-column prop="jzl"
-                                sortable
-                                label="就诊量">
+                             sortable
+                             label="就诊量">
             </el-table-column>
             <el-table-column prop="yyzl"
-                                sortable
-                                label="预约总量">
+                             sortable
+                             label="预约总量">
             </el-table-column>
             <el-table-column prop="bz"
-                                label="备注">
+                             label="备注">
             </el-table-column>
             <el-table-column prop="ze"
-                                sortable
-                                label="总额">
+                             sortable
+                             label="总额">
             </el-table-column>
         </el-table>
     </template>
@@ -84,7 +88,7 @@
             jzl: 9,
             yyzl: 29,
             bz: ""
-        },{
+        }, {
             id: "002002",
             mc: '血管瘤',
             wjzl: 7,
@@ -92,7 +96,7 @@
             jzl: 9,
             yyzl: 29,
             bz: ""
-        },{
+        }, {
             id: "002003",
             mc: '男科',
             wjzl: 9,
@@ -100,7 +104,7 @@
             jzl: 20,
             yyzl: 39,
             bz: ""
-        },{
+        }, {
             id: "002004",
             mc: '泌尿',
             wjzl: 9,
@@ -108,7 +112,7 @@
             jzl: 20,
             yyzl: 39,
             bz: ""
-        },{
+        }, {
             id: "002005",
             mc: '妇科',
             wjzl: 9,
@@ -116,7 +120,7 @@
             jzl: 20,
             yyzl: 39,
             bz: ""
-        },{
+        }, {
             id: "002006",
             mc: '内分泌',
             wjzl: 42,
@@ -124,7 +128,7 @@
             jzl: 53,
             yyzl: 180,
             bz: ""
-        },{
+        }, {
             id: "002007",
             mc: '糖尿',
             wjzl: 42,
@@ -132,7 +136,7 @@
             jzl: 53,
             yyzl: 180,
             bz: ""
-        },{
+        }, {
             id: "002008",
             mc: '甲状腺',
             wjzl: 42,
@@ -140,7 +144,7 @@
             jzl: 53,
             yyzl: 180,
             bz: ""
-        },{
+        }, {
             id: "002009",
             mc: '心血管',
             wjzl: 42,
@@ -148,7 +152,7 @@
             jzl: 53,
             yyzl: 180,
             bz: ""
-        },{
+        }, {
             id: "002010",
             mc: '神内',
             wjzl: 42,
@@ -156,7 +160,7 @@
             jzl: 53,
             yyzl: 180,
             bz: ""
-        },{
+        }, {
             id: "002011",
             mc: '中医',
             wjzl: 42,
@@ -200,8 +204,9 @@
                 });
 
                 return sums;
-            }, 
+            },
             load(tree, treeNode, resolve) {
+                this.getDetailProcess("1")
                 setTimeout(() => {
                     resolve([
                         {
@@ -213,7 +218,7 @@
                             yyzl: 29,
                             bz: "",
                             ze: 2700
-                        },{
+                        }, {
                             id: "22",
                             mc: '男科、泌尿、妇科',
                             wjzl: 9,
@@ -222,7 +227,7 @@
                             yyzl: 39,
                             bz: "",
                             ze: 4800
-                        },{
+                        }, {
                             id: "23",
                             mc: '内分泌、糖尿、甲状腺、心血管、神内、中医',
                             wjzl: 42,
@@ -235,7 +240,16 @@
                 }, 1000)
             },
             getDetailProcess(hospitalId) {
+                var url = "https://@Context.Request.Host" + "/api/MyApi/Get/" + hospitalId
+                const req = new Request(url, { method: "GET" })
 
+                fetch(req).then(function (response) {
+                    response.json().then(function (value) {
+                        alert(value)
+                    });
+                }).catch(function (error) {
+                    alert(error)
+                })
             }
         }
     }

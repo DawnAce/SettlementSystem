@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using SettlementSystem.Service;
 
 namespace SettlementSystem.Controllers
 {
@@ -20,9 +22,15 @@ namespace SettlementSystem.Controllers
 
         // GET: api/MyApi/5
         [HttpGet("{id}", Name = "Get")]
-        public string Get(int id)
+        public string Get(string id)
         {
-            return "value";
+            return "{\"id\":" + id + "}";
+        }
+
+        [HttpGet("{hospitalId}", Name = "calculate")]
+        public string QueryResultByHospitalId(string hospitalId)
+        {
+            return JsonConvert.SerializeObject(new CalculateService().GetResultByHospitalId(hospitalId));
         }
 
         // POST: api/MyApi

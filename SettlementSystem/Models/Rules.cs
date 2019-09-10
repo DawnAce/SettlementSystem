@@ -30,9 +30,14 @@ namespace SettlementSystem.Models
         public double Wjzje { get; set; }
 
         /// <summary>
-        /// 取消获得的前
+        /// 取消获得的钱
         /// </summary>
         public double Qxje { get; set; }
+
+        /// <summary>
+        /// 预约渠道(114、快医等)
+        /// </summary>
+        public string Qd { get; set; }
 
         /// <summary>
         /// 到诊获得的钱

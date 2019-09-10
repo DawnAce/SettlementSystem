@@ -4,6 +4,24 @@
 
 <div id="app">
     <template>
+        <span>医院：</span><el-select v-model="hospitalValues" placeholder="请选择医院">
+            <el-option v-for="item in hospitalOptions"
+                       :key="item.value"
+                       :label="item.label"
+                       :value="item.value">
+            </el-option>
+        </el-select>
+
+        <span style="margin-left: 20px;">预约渠道：</span><el-select v-model="channelValues"
+                   collapse-tags
+                   placeholder="请选择渠道">
+            <el-option v-for="item in channelOptions"
+                       :key="item.value"
+                       :label="item.label"
+                       :value="item.value">
+            </el-option>
+        </el-select>
+
         <el-table ref="hospitalTable"
                   :data="tableData"
                   border
@@ -13,7 +31,7 @@
                   row-key="id"
                   :load="load"
                   :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
-                  style="width: 100%">
+                  style="margin-top: 10px;width: 100%">
             <el-table-column property="mc"
                              label="医院名称"
                              sortable
@@ -42,21 +60,13 @@
                              sortable
                              label="总额">
             </el-table-column>
+            <el-table-column label="渠道详情">
+            </el-table-column>
         </el-table>
     </template>
 </div>
 <script>
     var tableData = [
-        {
-            id: "001",
-            mc: '北京爱尔英智眼科医院',
-            wjzl: 66,
-            qxl: 59,
-            jzl: 101,
-            yyzl: 226,
-            bz: "",
-            ze: 1000
-        },
         {
             id: "002",
             mc: '北京长峰医院',
@@ -64,19 +74,10 @@
             qxl: 108,
             jzl: 82,
             yyzl: 248,
+            qd: "所有",
             bz: "",
             ze: 13860,
             hasChildren: true
-        },
-        {
-            id: "003",
-            mc: '北京优颐口腔医院特需门诊分院（海淀区）',
-            wjzl: 1,
-            qxl: 0,
-            jzl: 1,
-            yyzl: 2,
-            bz: "测试最长名称",
-            ze: 100
         }
     ]
 
@@ -87,6 +88,7 @@
             qxl: 13,
             jzl: 9,
             yyzl: 29,
+            qd: "所有",
             bz: ""
         }, {
             id: "002002",
@@ -95,6 +97,7 @@
             qxl: 13,
             jzl: 9,
             yyzl: 29,
+            qd: "所有",
             bz: ""
         }, {
             id: "002003",
@@ -103,6 +106,7 @@
             qxl: 10,
             jzl: 20,
             yyzl: 39,
+            qd: "所有",
             bz: ""
         }, {
             id: "002004",
@@ -111,6 +115,7 @@
             qxl: 10,
             jzl: 20,
             yyzl: 39,
+            qd: "所有",
             bz: ""
         }, {
             id: "002005",
@@ -119,6 +124,7 @@
             qxl: 10,
             jzl: 20,
             yyzl: 39,
+            qd: "所有",
             bz: ""
         }, {
             id: "002006",
@@ -127,6 +133,7 @@
             qxl: 85,
             jzl: 53,
             yyzl: 180,
+            qd: "所有",
             bz: ""
         }, {
             id: "002007",
@@ -135,6 +142,7 @@
             qxl: 85,
             jzl: 53,
             yyzl: 180,
+            qd: "所有",
             bz: ""
         }, {
             id: "002008",
@@ -143,6 +151,7 @@
             qxl: 85,
             jzl: 53,
             yyzl: 180,
+            qd: "所有",
             bz: ""
         }, {
             id: "002009",
@@ -151,6 +160,7 @@
             qxl: 85,
             jzl: 53,
             yyzl: 180,
+            qd: "所有",
             bz: ""
         }, {
             id: "002010",
@@ -159,6 +169,7 @@
             qxl: 85,
             jzl: 53,
             yyzl: 180,
+            qd: "所有",
             bz: ""
         }, {
             id: "002011",
@@ -167,14 +178,39 @@
             qxl: 85,
             jzl: 53,
             yyzl: 180,
+            qd: "所有",
             bz: ""
         }
     ]
 
+    var hospitalOptions = [{
+        value: "all",
+        label: "全部"
+    },{
+        value: "002",
+        label: "长峰医院"
+    }]
+
+    var channelOptions = [{
+        value: "all",
+        label: "全部"
+    },{
+        value: "114",
+        label: "114"
+    },{
+        value: "ky",
+        label: "快医"
+    }]
+
+    var nodeCount = 1   // only to identify different tree node
     var Main = {
         data() {
             return {
-                tableData: tableData
+                tableData: tableData,
+                hospitalOptions: hospitalOptions,
+                channelOptions: channelOptions,
+                hospitalValues: "全部",
+                channelValues: "全部"
             }
         },
         methods: {
@@ -206,50 +242,77 @@
                 return sums;
             },
             load(tree, treeNode, resolve) {
-                this.getDetailProcess("1")
-                setTimeout(() => {
-                    resolve([
-                        {
-                            id: "21",
-                            mc: '血管外科、血管瘤',
-                            wjzl: 7,
-                            qxl: 13,
-                            jzl: 9,
-                            yyzl: 29,
-                            bz: "",
-                            ze: 2700
-                        }, {
-                            id: "22",
-                            mc: '男科、泌尿、妇科',
-                            wjzl: 9,
-                            qxl: 10,
-                            jzl: 20,
-                            yyzl: 39,
-                            bz: "",
-                            ze: 4800
-                        }, {
-                            id: "23",
-                            mc: '内分泌、糖尿、甲状腺、心血管、神内、中医',
-                            wjzl: 42,
-                            qxl: 85,
-                            jzl: 53,
-                            yyzl: 180,
-                            bz: "",
-                            ze: 6360
-                        }])
-                }, 1000)
+                var formatDataFun = this.formatData
+                var formatNumberFun = this.formatNumber
+                // id中不包含";"表示为最上层医院，此时是不需要区分渠道的
+                if (tree.id.indexOf(";") == -1) {
+                    this.getDetailProcess(tree.id, function (data) {
+                        var newData = formatDataFun(data, false)
+                        newData.forEach((item, index) => item.id += ";" + formatNumberFun(nodeCount++))
+                        resolve(newData);
+                    })
+                } else {  //因为有合并，所以为了避免与真正的科室ID重复，需要加上递增后缀
+                    this.getDetailProcess(tree.id, function (data) {
+                        var newData = formatDataFun(data, true)
+                        newData.forEach((item, index) => item.id += ";" + formatNumberFun(nodeCount++))
+                        resolve(newData);
+                    })
+                }
+                resolve([]);
             },
-            getDetailProcess(hospitalId) {
-                var url = "https://@Context.Request.Host" + "/api/MyApi/Get/" + hospitalId
+            // 按照科室渠道进行计算 
+            getDetailProcess(id, callback) {
+                // fqd为true，表示要分渠道进行展示
+                var url = "https://@Context.Request.Host" + "/api/MyApi/Calculate/" + id
                 const req = new Request(url, { method: "GET" })
 
                 fetch(req).then(function (response) {
                     response.json().then(function (value) {
-                        alert(value)
+                        callback(value)
                     });
                 }).catch(function (error) {
                     alert(error)
                 })
+            },
+            formatNumber(num) {
+                return "000".substring(0,3-num.toString().length)+num
+            },
+            // 合并显示数据
+            formatData(data, fqd) {
+                var m = new Map();
+                data.forEach((item, index) => {
+                    var key = item.mc + ";" + item.xsjh
+                    if (fqd)
+                        key += ";" + item.qd
+                    if (m.has(key)) {
+                        var row = m.get(key)
+                        if (!row.idSet.has(item.id)) {
+                            row.id += "," + item.id
+                            row.idSet.add(item.id)
+                            row.ks += "、" + item.ks
+                        }
+
+                        row.wjzl += item.wjzl
+                        row.qxl += item.qxl
+                        row.jzl += item.jzl
+                        row.yyzl += item.yyzl
+                        row.ze += item.ze
+                    } else {
+                        item.idSet = new Set([item.id])
+                        m.set(key, Object.assign({}, item))
+                    }
+                })
+
+                var tempData = new Array()
+                m.forEach(function (value, key, map) {
+                    delete value.idSet
+                    if (!fqd)
+                        value.qd = "所有"
+                    value.mc = value.ks     // 需要显示科室的名称集合
+                    value.hasChildren = !fqd    //如果分渠道展示，说明子节点已经为叶子节点
+                    tempData.push(value)
+                })
+                return tempData
             }
         }
     }

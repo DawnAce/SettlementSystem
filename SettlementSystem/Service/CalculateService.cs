@@ -9,15 +9,24 @@ namespace SettlementSystem.Service
 {
     public class CalculateService
     {
-        public IList<Hospital> GetResultByHospitalId(string hospitalId)
+        public IList<Hospital> GetResultByHospitalId(string id)
         {
             var dataService = new DataService();
-            var departments = dataService.GetDepartmentsHospitalId(hospitalId);
+            var departments = dataService.GetDepartmentsHospitalId(id);
             var rules = dataService.GetDepartmentCalculateRules();
 
-            var result = new List<Hospital>();
+            var rulesMap = new Dictionary<string, Rules>();
+            foreach(var rule in rules)
+                rulesMap.Add(rule.Id, rule);
 
-            return result;
+            foreach(var department in departments)
+            {
+                var rule = rulesMap[department.Id];
+                department.Yyzl = department.Wjzl + department.Qxl + department.Jzl;
+                department.Ze = department.Wjzl * rule.Wjzje + department.Qxl * rule.Qxje + department.Jzl * rule.Dzje;
+            }
+
+            return departments;
         }
     }
 }

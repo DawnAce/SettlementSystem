@@ -21,16 +21,18 @@ namespace SettlementSystem.Controllers
         }
 
         // GET: api/MyApi/5
-        [HttpGet("{id}", Name = "Get")]
+        [HttpGet("{id}")]
+        [ActionName("Gets")]
         public string Get(string id)
         {
             return "{\"id\":" + id + "}";
         }
 
-        [HttpGet("{hospitalId}", Name = "calculate")]
-        public string QueryResultByHospitalId(string hospitalId)
+        [HttpGet("{id}")]
+        [ActionName("Calculate")]
+        public string QueryResultByHospitalId(string id)
         {
-            return JsonConvert.SerializeObject(new CalculateService().GetResultByHospitalId(hospitalId));
+            return JsonConvert.SerializeObject(new CalculateService().GetResultByHospitalId(id));
         }
 
         // POST: api/MyApi

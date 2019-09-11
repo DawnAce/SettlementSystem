@@ -10,7 +10,10 @@
 <div id="app">
     <template>
         <span>医院：</span>
-        <el-select v-model="hospitalValues" value-key="value" placeholder="请选择医院">
+        <el-select v-model="hospitalValues" 
+                   multiple
+                   value-key="value" 
+                   placeholder="请选择医院">
             <el-option v-for="item in hospitalOptions"
                        :key="item.value"
                        :label="item.label"
@@ -26,10 +29,11 @@
             <el-option v-for="item in channelOptions"
                        :key="item.value"
                        :label="item.label"
-                       :value="item.value">
+                       :value="item">
+                {{item.label}}
             </el-option>
         </el-select>
-        <el-button type="primary" v-on:click="">计算</el-button>
+        <el-button type="primary" v-on:click="initTable()">计算</el-button>
 
         <el-button type="primary" v-on:click="exportTable()" style="float: right">导出表格</el-button>
 
@@ -65,6 +69,9 @@
                              sortable
                              label="预约总量">
             </el-table-column>
+            <el-table-column prop="qd"
+                             label="渠道">
+            </el-table-column>
             <el-table-column prop="bz"
                              label="备注">
             </el-table-column>
@@ -72,133 +79,11 @@
                              sortable
                              label="总额">
             </el-table-column>
-            <el-table-column label="渠道详情">
-            </el-table-column>
         </el-table>
     </template>
 </div>
 <script>
-    var tableData = [
-        {
-            id: "002",
-            mc: '北京长峰医院',
-            wjzl: 58,
-            qxl: 108,
-            jzl: 82,
-            yyzl: 248,
-            qd: "所有",
-            bz: "",
-            ze: 13860,
-            hasChildren: true
-        }
-    ]
-
-    var cfData = [{
-            id: "002001",
-            mc: '血管外科',
-            wjzl: 7,
-            qxl: 13,
-            jzl: 9,
-            yyzl: 29,
-            qd: "所有",
-            bz: ""
-        }, {
-            id: "002002",
-            mc: '血管瘤',
-            wjzl: 7,
-            qxl: 13,
-            jzl: 9,
-            yyzl: 29,
-            qd: "所有",
-            bz: ""
-        }, {
-            id: "002003",
-            mc: '男科',
-            wjzl: 9,
-            qxl: 10,
-            jzl: 20,
-            yyzl: 39,
-            qd: "所有",
-            bz: ""
-        }, {
-            id: "002004",
-            mc: '泌尿',
-            wjzl: 9,
-            qxl: 10,
-            jzl: 20,
-            yyzl: 39,
-            qd: "所有",
-            bz: ""
-        }, {
-            id: "002005",
-            mc: '妇科',
-            wjzl: 9,
-            qxl: 10,
-            jzl: 20,
-            yyzl: 39,
-            qd: "所有",
-            bz: ""
-        }, {
-            id: "002006",
-            mc: '内分泌',
-            wjzl: 42,
-            qxl: 85,
-            jzl: 53,
-            yyzl: 180,
-            qd: "所有",
-            bz: ""
-        }, {
-            id: "002007",
-            mc: '糖尿',
-            wjzl: 42,
-            qxl: 85,
-            jzl: 53,
-            yyzl: 180,
-            qd: "所有",
-            bz: ""
-        }, {
-            id: "002008",
-            mc: '甲状腺',
-            wjzl: 42,
-            qxl: 85,
-            jzl: 53,
-            yyzl: 180,
-            qd: "所有",
-            bz: ""
-        }, {
-            id: "002009",
-            mc: '心血管',
-            wjzl: 42,
-            qxl: 85,
-            jzl: 53,
-            yyzl: 180,
-            qd: "所有",
-            bz: ""
-        }, {
-            id: "002010",
-            mc: '神内',
-            wjzl: 42,
-            qxl: 85,
-            jzl: 53,
-            yyzl: 180,
-            qd: "所有",
-            bz: ""
-        }, {
-            id: "002011",
-            mc: '中医',
-            wjzl: 42,
-            qxl: 85,
-            jzl: 53,
-            yyzl: 180,
-            qd: "所有",
-            bz: ""
-        }
-    ]
-
     var hospitalOptions = [{
-        value: "all",
-        label: "全部"
-    },{
         value: "002",
         label: "长峰医院"
     }]
@@ -215,16 +100,50 @@
     var Main = {
         data() {
             return {
-                tableData: tableData,
+                tableData: [],
                 hospitalOptions: hospitalOptions,
                 channelOptions: channelOptions,
-                hospitalValues: null,
-                channelValues: ["114", "快医"]
+                hospitalValues: hospitalOptions,
+                channelValues: channelOptions
             }
         },
+        created() {
+            this.initTable();
+        },
         methods: {
-            created() {
-                this.hospitalValues = hospitalOptions[0]
+            initTable() {
+                var hospital = this.hospitalValues
+                if (hospital.length == 0) {
+                    this.$message.error('必须选择至少一所医院！')
+                    return
+                }
+                var qd = this.channelValues
+                if (qd.length == 0) {
+                    this.$message.error('你没选渠道怎么算！')
+                    return
+                }
+                var hospitalIds = hospital.map(item => item.value)
+                var qdIds = qd.map(item => item.value)
+                var url = "https://@Context.Request.Host" + "/api/MyApi/CalculateHospital/" + hospitalIds + "?qd=" + qdIds;
+
+                const req = new Request(url, { method: "GET" })
+
+                var holder = this
+                fetch(req).then(function (response) {
+                    response.json().then(function (data) {
+                        data.forEach((item, index) => {
+                            item.hasChildren = true
+                            item.level = 1
+                            item.qd = holder.convertQdCode(item.qd)
+                            item.children = []
+                        })
+
+                        holder.tableData = []   // 因为如果已经有了展开项，那么只会变第一层的数，所以需要先清空table
+                        holder.tableData = data
+                    });
+                }).catch(function (error) {
+                    alert(error)
+                })
             },
             getSummaries(param) {
                 const { columns, data } = param;
@@ -254,28 +173,30 @@
                 return sums;
             },
             load(tree, treeNode, resolve) {
-                var formatDataFun = this.formatData
-                var formatNumberFun = this.formatNumber
-                // id中不包含";"表示为最上层医院，此时是不需要区分渠道的
-                if (tree.id.indexOf(";") == -1) {
-                    this.getDetailProcess(tree.id, function (data) {
-                        var newData = formatDataFun(data, false)
-                        newData.forEach((item, index) => item.id += ";" + formatNumberFun(nodeCount++))
-                        resolve(newData);
-                    })
-                } else {  //因为有合并，所以为了避免与真正的科室ID重复，需要加上递增后缀
-                    this.getDetailProcess(tree.id, function (data) {
-                        var newData = formatDataFun(data, true)
-                        newData.forEach((item, index) => item.id += ";" + formatNumberFun(nodeCount++))
-                        resolve(newData);
-                    })
+                // 当qd字段有值时，说明已经到叶节点，不能再展开了
+                if (tree.qd != null && tree.qd != "") {
+                    resolve([])
+                    return
                 }
-                resolve([]);
+                var holder = this
+                var fqd = tree.level > 1   //从第三层起才分渠道，即当前为第二层节点
+
+                // 只需要医院id或者科室id的集合
+                this.getDetailProcess(tree.id.split(";")[0], function (data) {
+                        var newData = holder.formatData(data, fqd)
+                    newData.forEach((item, index) => {
+                        if(!fqd) item.qd = ""   //部分渠道的话，所展示的为所选的渠道，所以不用显示
+                        item.id += ";" + holder.formatNumber(nodeCount++)
+                        item.level = tree.level + 1
+                        item.qd = holder.convertQdCode(item.qd)
+                    })
+                    resolve(newData)
+                })
             },
             // 按照科室渠道进行计算
             getDetailProcess(id, callback) {
-                // fqd为true，表示要分渠道进行展示
-                var url = "https://@Context.Request.Host" + "/api/MyApi/Calculate/" + id
+                var qd = this.channelValues.map(item => item.value)
+                var url = "https://@Context.Request.Host" + "/api/MyApi/CalculateDepartment/" + id + "?qd=" + qd;
                 const req = new Request(url, { method: "GET" })
 
                 fetch(req).then(function (response) {
@@ -318,13 +239,16 @@
                 var tempData = new Array()
                 m.forEach(function (value, key, map) {
                     delete value.idSet
-                    if (!fqd)
-                        value.qd = "所有"
                     value.mc = value.ks     // 需要显示科室的名称集合
-                    value.hasChildren = !fqd    //如果分渠道展示，说明子节点已经为叶子节点
+                    value.hasChildren = true    //默认所有节点都可展开，最后是否为叶子节点应该看后台返回的数据是否与当前节点相同
                     tempData.push(value)
                 })
                 return tempData
+            },
+            convertQdCode(qdCode) {
+                if (qdCode == 'ky')
+                    return "快医"
+                return qdCode
             },
             exportTable(){
                 /* generate workbook object from table */

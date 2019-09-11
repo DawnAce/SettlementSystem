@@ -29,10 +29,17 @@ namespace SettlementSystem.Controllers
         }
 
         [HttpGet("{id}")]
-        [ActionName("Calculate")]
+        [ActionName("CalculateDepartment")]
         public string QueryResultByHospitalId(string id, string qd)
         {
-            return JsonConvert.SerializeObject(new CalculateService().GetResultByHospitalId(id, qd));
+            return JsonConvert.SerializeObject(new CalculateService().GetDepartmentResult(id, qd));
+        }
+
+        [HttpGet("{id}")]
+        [ActionName("CalculateHospital")]
+        public string QueryHospitalResult(string id, string qd)
+        {
+            return JsonConvert.SerializeObject(new CalculateService().GetHospitalResult(id, qd));
         }
 
         // POST: api/MyApi

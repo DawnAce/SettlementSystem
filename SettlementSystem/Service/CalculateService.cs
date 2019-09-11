@@ -9,10 +9,10 @@ namespace SettlementSystem.Service
 {
     public class CalculateService
     {
-        public IList<Hospital> GetResultByHospitalId(string id)
+        public IList<Hospital> GetResultByHospitalId(string id, string typeArray)
         {
             var dataService = new DataService();
-            var departments = dataService.GetDepartmentsHospitalId(id);
+            var departments = dataService.GetDepartmentsHospitalId(id, typeArray);
             var rules = dataService.GetDepartmentCalculateRules();
 
             var rulesMap = new Dictionary<string, Rules>();

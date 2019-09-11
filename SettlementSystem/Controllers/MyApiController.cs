@@ -30,9 +30,9 @@ namespace SettlementSystem.Controllers
 
         [HttpGet("{id}")]
         [ActionName("Calculate")]
-        public string QueryResultByHospitalId(string id)
+        public string QueryResultByHospitalId(string id, string qd)
         {
-            return JsonConvert.SerializeObject(new CalculateService().GetResultByHospitalId(id));
+            return JsonConvert.SerializeObject(new CalculateService().GetResultByHospitalId(id, qd));
         }
 
         // POST: api/MyApi

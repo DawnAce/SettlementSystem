@@ -9,12 +9,12 @@ namespace SettlementSystem.Service
 {
     public class DataService
     {
-        public IList<Hospital> GetDepartmentsHospitalId(string id)
+        public IList<Hospital> GetDepartmentsHospitalId(string id, string typeArray)
         {
             var result = new List<Hospital>
             {
                 new Hospital { Id = "002001", Mc = "长峰医院", Ks = "血管外科", Wjzl = 2, Qxl = 4, Jzl = 3, Yyzl = 0, Qd = "114", Bz = "", Ze = 0, Xsjh = "002001,002002" },
-                new Hospital { Id = "002001", Mc = "长峰医院", Ks = "血管外科", Wjzl = 2, Qxl = 4, Jzl = 3, Yyzl = 0, Qd = "快医", Bz = "", Ze = 0, Xsjh = "002001,002002" },
+                new Hospital { Id = "002001", Mc = "长峰医院", Ks = "血管外科", Wjzl = 2, Qxl = 4, Jzl = 3, Yyzl = 0, Qd = "qy", Bz = "", Ze = 0, Xsjh = "002001,002002" },
                 new Hospital { Id = "002002", Mc = "长峰医院", Ks = "血管瘤", Wjzl = 3, Qxl = 5, Jzl = 3, Yyzl = 0, Qd = "114", Bz = "", Ze = 0, Xsjh = "002001,002002" },
                 new Hospital { Id = "002003", Mc = "长峰医院", Ks = "男科", Wjzl = 3, Qxl = 3, Jzl = 6, Yyzl = 0, Qd = "114", Bz = "", Ze = 0, Xsjh = "002003,002004,002005" },
                 new Hospital { Id = "002004", Mc = "长峰医院", Ks = "泌尿", Wjzl = 3, Qxl = 3, Jzl = 6, Yyzl = 0, Qd = "114", Bz = "", Ze = 0, Xsjh = "002003,002004,002005" },
@@ -30,7 +30,15 @@ namespace SettlementSystem.Service
             if (id.Contains(";"))
             {
                 var departmentIds = new HashSet<string>(id.Split(";")[0].Split(","));
-                return result.Where(x => departmentIds.Contains(x.Id)).ToList();
+                result = result.Where(x => departmentIds.Contains(x.Id)).ToList();
+            }
+            else if (!id.Equals("all"))
+                result = result.Where(x => x.Id.Equals(id)).ToList();
+
+            if (!typeArray.Equals("all"))
+            {
+                var types = new HashSet<string>(typeArray.Split(","));
+                result = result.Where(x => types.Contains(x.Qd)).ToList();
             }
             return result;
         }

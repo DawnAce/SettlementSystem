@@ -2,10 +2,10 @@
     ViewData["Title"] = "Calculate Page";
 }
 <!-- add the shim first -->
-<script type="text/javascript" src="//unpkg.com/xlsx/dist/shim.min.js"></script>
+<script type="text/javascript" src="https://unpkg.com/xlsx/dist/shim.min.js"></script>
 <!-- after the shim is referenced, add the library -->
-<script type="text/javascript" src="//unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
-<script type="text/javascript" src="//unpkg.com/file-saver@1.3.3/FileSaver.js"></script>
+<script type="text/javascript" src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+<script type="text/javascript" src="https://unpkg.com/file-saver@1.3.3/FileSaver.js"></script>
 
 <div id="app">
     <template>
@@ -138,8 +138,11 @@
                             item.children = []
                         })
 
-                        holder.tableData = []   // 因为如果已经有了展开项，那么只会变第一层的数，所以需要先清空table
-                        holder.tableData = data
+                        // 因为如果已经有了展开项，那么只会变第一层的树节点（增加的展开节点还在），所以需要先清空table，然后调用nextTick方法，在清空表格后，再更新为最新数据
+                        holder.tableData = []   
+                        holder.$nextTick(function () {
+                            holder.tableData = data
+                        })
                     });
                 }).catch(function (error) {
                     alert(error)
@@ -185,7 +188,6 @@
                 this.getDetailProcess(tree.id.split(";")[0], function (data) {
                         var newData = holder.formatData(data, fqd)
                     newData.forEach((item, index) => {
-                        if(!fqd) item.qd = ""   //部分渠道的话，所展示的为所选的渠道，所以不用显示
                         item.id += ";" + holder.formatNumber(nodeCount++)
                         item.level = tree.level + 1
                         item.qd = holder.convertQdCode(item.qd)
@@ -240,7 +242,8 @@
                 m.forEach(function (value, key, map) {
                     delete value.idSet
                     value.mc = value.ks     // 需要显示科室的名称集合
-                    value.hasChildren = true    //默认所有节点都可展开，最后是否为叶子节点应该看后台返回的数据是否与当前节点相同
+                    value.hasChildren = !fqd    //如果要分渠道，说明已经到了叶子节点了
+                    if(!fqd) value.qd = ""   //不分渠道的话，所展示的为所选的渠道，所以不用显示
                     tempData.push(value)
                 })
                 return tempData

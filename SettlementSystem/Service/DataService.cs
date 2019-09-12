@@ -1,4 +1,5 @@
 ﻿using SettlementSystem.Models;
+using SqlSugar;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -77,6 +78,28 @@ namespace SettlementSystem.Service
             };
 
             return result;
+        }
+
+        /// <summary>
+        /// Create SqlSugarClient
+        /// </summary>
+        /// <returns></returns>
+        public SqlSugarClient GetInstance()
+        {
+            SqlSugarClient db = new SqlSugarClient(new ConnectionConfig()
+            {
+                ConnectionString = "Server=52.231.54.69;Port=3306;Database=MyDatabase;Uid=Ace;Pwd=Chenxi19900604;",
+                DbType = DbType.MySql,
+                IsAutoCloseConnection = true,
+                InitKeyType = InitKeyType.Attribute
+            }) ;
+            //Print sql
+            db.Aop.OnLogExecuting = (sql, pars) =>
+            {
+                Console.WriteLine(sql + "\r\n" + db.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value)));
+                Console.WriteLine();
+            };
+            return db;
         }
     }
 }

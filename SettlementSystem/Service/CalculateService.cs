@@ -9,7 +9,7 @@ namespace SettlementSystem.Service
 {
     public class CalculateService
     {
-        public IList<Hospital> GetHospitalResult(string id, string typeArray)
+        public IList<HospitalVO> GetHospitalResult(string id, string typeArray)
         {
             var dataService = new DataService();
             var departments = dataService.GetHospitals(id, typeArray);
@@ -18,18 +18,18 @@ namespace SettlementSystem.Service
             var rulesMap = new Dictionary<string, Rules>();
             foreach (var rule in rules)
                 rulesMap.Add(rule.Id, rule);
-            var hospitalsMap = new Dictionary<string, Hospital>();
+            var hospitalsMap = new Dictionary<string, HospitalVO>();
             
             foreach(var department in departments)
             {
                 var rule = rulesMap[department.Id];
                 var hospitalId = department.Id.Substring(0, 3);
-                Hospital hospital = null;
+                HospitalVO hospital = null;
                 if (hospitalsMap.ContainsKey(hospitalId))
                     hospital = hospitalsMap[hospitalId];
                 else
                 {
-                    hospital = new Hospital
+                    hospital = new HospitalVO
                     {
                         Id = hospitalId,
                         Mc = department.Mc
@@ -44,11 +44,11 @@ namespace SettlementSystem.Service
                 hospital.Ze += department.Wjzl * rule.Wjzje + department.Qxl * rule.Qxje + department.Jzl * rule.Dzje;
             }
 
-            var result = new List<Hospital>(hospitalsMap.Values);
+            var result = new List<HospitalVO>(hospitalsMap.Values);
             return result;
         }
 
-        public IList<Hospital> GetDepartmentResult(string id, string typeArray)
+        public IList<HospitalVO> GetDepartmentResult(string id, string typeArray)
         {
             var dataService = new DataService();
             var departments = dataService.GetDepartments(id, typeArray);

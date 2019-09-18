@@ -4,40 +4,78 @@
 
 <div id="app">
     <template>
-        <el-button v-on:click="resetDateFilter">清除日期过滤器</el-button>
-        <el-button v-on:click="clearFilter">清除所有过滤器</el-button>
+        <el-upload class="upload-excel"
+                   ref="upload"
+                   :action="uploadPath"
+                   :before-upload="beforeUpload"
+                   :limit="1"
+                   :auto-upload="false"
+                   :on-success='handleSuccess'
+                   list-type='text'
+                   style="width:300px; margin-bottom:10px;">
+            <el-button slot="trigger" size="small" type="primary">选取文件</el-button>
+            <el-button style="margin-left: 10px;" size="small" type="success" v-on:click="submitUpload">上传到服务器</el-button>
+            <div slot="tip" class="el-upload__tip">只能上传Excel文件，且只能上传单个文件</div>
+        </el-upload>
+        <span>科室：</span>
+        <el-cascader :options="hospitalOptions"
+                     :props="hospitalProps"
+                     placeholder="请选择医院"
+                     expand-trigger="hover"
+                     collapse-tags
+                     v-model="hospitalDefault">
+        </el-cascader>
+        <span style="margin-left:10px">月份：</span>
+        <el-cascader :options="dateOptions"
+                     :props="dateProps"
+                     placeholder="请选择日期"
+                     collapse-tags
+                     v-model="dateDefault">
+        </el-cascader>
+        <el-button type="primary" v-on:click="" style="float: right">查询</el-button>
         <el-table ref="filterTable"
                   :data="tableData"
                   border
                   v-on:filter-change="reformData"
-                  style="width: 100%">
-            <el-table-column prop="date"
-                             label="日期"
-                             column-key="date"
-                             width="180"
-                             :filters="dateFilters"
-                             :filter-method="filterHandler">
+                  style="width: 100%; margin-top:10px;">
+            <el-table-column prop="fymc"
+                             label="分院名称">
             </el-table-column>
-            <el-table-column prop="name"
-                             label="姓名"
-                             width="180">
+            <el-table-column prop="zymc"
+                             label="总院名称">
             </el-table-column>
-            <el-table-column prop="address"
-                             label="地址">
+            <el-table-column prop="zymc"
+                             label="属于">
             </el-table-column>
-            <el-table-column prop="type"
-                             column-key="type"
-                             label="属于"
-                             width="100"
-                             :filters="typeFilters"
-                             :filter-method="filterType"
-                             filter-placement="bottom-end">
+            <el-table-column prop="ghr"
+                             label="挂号人">
+            </el-table-column>
+            <el-table-column prop="jzrq"
+                             label="日期">
+            </el-table-column>
+            <el-table-column prop="ks"
+                             label="科室">
+            </el-table-column>
+            <el-table-column prop="ys"
+                             label="医生">
+            </el-table-column>
+            <el-table-column prop="ghf"
+                             label="挂号费">
+            </el-table-column>
+            <el-table-column prop="ddzt"
+                             label="订单状态">
+            </el-table-column>
+            <el-table-column prop="zfzt"
+                             label="支付状态">
+            </el-table-column>
+            <el-table-column prop="jsqd"
+                             label="结算渠道">
             </el-table-column>
         </el-table>
         <el-pagination v-on:size-change="handleSizeChange"
                        v-on:current-change="handleCurrentChange"
                        :current-page="currentPage"
-                       :page-sizes="[defaultSize, 10, 50, 100]"
+                       :page-sizes="[50, 100]"
                        :page-size="pageSize"
                        layout="total, sizes, prev, pager, next, jumper"
                        :total="total">
@@ -45,117 +83,105 @@
     </template>
 </div>
 <script>
-    var tableData = [{
-        date: '2016-05-03',
-        name: '王小虎',
-        address: '上海市普陀区金沙江路 1518 弄',
-        type: "第三医院"
-    }, {
-        date: '2016-05-02',
-        name: '王小虎',
-        address: '上海市普陀区金沙江路 1518 弄',
-        type: "第一医院"
-    }, {
-        date: '2016-05-04',
-        name: '王小虎',
-        address: '上海市普陀区金沙江路 1518 弄',
-        type: "第二医院"
-    }, {
-        date: '2016-05-01',
-        name: '王小虎',
-        address: '上海市普陀区金沙江路 1518 弄',
-        type: "第一医院"
-    }, {
-        date: '2016-05-08',
-        name: '王小虎',
-        address: '上海市普陀区金沙江路 1518 弄',
-        type: "第一医院"
-    }, {
-        date: '2016-05-06',
-        name: '王小虎',
-        address: '上海市普陀区金沙江路 1518 弄',
-        type: "第三医院"
-    }, {
-        date: '2016-05-07',
-        name: '王小虎',
-        address: '上海市普陀区金沙江路 1518 弄',
-        type: "第二医院"
-    }];
-
-    var dateFilters = [{
-        text: '2016-05-01',
-        value: '2016-05-01'
-    }, {
-        text: '2016-05-02',
-        value: '2016-05-02'
-    }, {
-        text: '2016-05-03',
-        value: '2016-05-03'
-    }, {
-        text: '2016-05-04',
-        value: '2016-05-04'
-    }, {
-        text: '2016-05-06',
-        value: '2016-05-06'
-    }, {
-        text: '2016-05-07',
-        value: '2016-05-07'
-    }, {
-        text: '2016-05-08',
-        value: '2016-05-08'
-    }]
-
-    var typeFilters = [{
-        text: '第一医院', value: '第一医院'
-    }, {
-        text: '第二医院', value: '第二医院'
-    }, {
-        text: '第三医院', value: '第三医院'
-    }]
-
-    var defaultPageSize = 1
-    var firstPageData = tableData.slice(0, defaultPageSize)
-    var currentData = tableData
     var selectDates = new Set();
     var selectTypes = new Set();
 
     var Main = {
         data() {
             return {
-                tableData: firstPageData,
-                dateFilters: dateFilters,
-                typeFilters: typeFilters,
-                total: currentData.length,
-                defaultSize: defaultPageSize,
+                uploadPath:"https://@Context.Request.Host" + "/api/MyApi/Upload",
+                tableData: [],
+                dateFilters: [],
+                typeFilters: [],
+                total: 0,
                 currentPage: 1,
-                pageSize: 1
+                pageSize: 50,
+                dateProps: { multiple: true },
+                dateOptions: [],
+                dateDefault: [],
+                hospitalProps: { multiple: true},
+                hospitalOptions: [],
+                hospitalDefault: []
             }
         },
+        created() {
+            this.initDateOptions()
+            this.initHospitalOptions()
+            //this.setTableData(this.tableData, this.total);
+        },
         methods: {
-            resetDateFilter() {
-                this.$refs.filterTable.clearFilter('date');
-                //All data only need to be refiltered with type
-                if (selectTypes.size != 0) {
-                    currentData = tableData.filter(item => selectTypes.has(item["type"]))
-                    this.tableData = currentData.slice(0, this.pageSize)
-                    this.changePagination(currentData.length, 1)
+            initDateOptions() {
+                var year = new Date().getFullYear()
+                var month = new Date().getMonth()
+                if (month < 10) month = "0" + month
+
+                var url = "https://@Context.Request.Host" + "/api/MyApi/GetDateChoices?year=" + year;
+
+                var holder = this
+                const req = new Request(url, { method: "GET" })
+                fetch(req).then(function (response) {
+                    response.json().then(function (data) {
+                        if (data.code == "200") {
+                            data.data.forEach((item, index) => {
+                                holder.dateOptions.push({"value": item.result, "label":item.result})
+                            })
+                           holder.dateDefault.push(year + "-" + month)
+                        } else {
+                            this.$message.erro(data.msg)
+                        }
+                    })
+                });
+            },
+            initHospitalOptions() {
+                var url = "https://@Context.Request.Host" + "/api/MyApi/GetHospitalTree"
+
+                var holder = this
+                const req = new Request(url, { method: "GET" })
+                fetch(req).then(function (response) {
+                    response.json().then(function (data) {
+                        if (data.code == "200") {
+                            holder.hospitalOptions = data.data.children;
+                            holder.hospitalDefault = data.data.default
+                        } else {
+                            this.$message.erro(data.msg)
+                        }
+                    })
+                });
+            },
+            setTableData(tableData, totalCount) {
+                var url = "https://@Context.Request.Host" + "/api/MyApi/GetPageData"
+
+                const req = new Request(url, { method: "GET" })
+                fetch(req).then(function (response) {
+                    response.json().then(function (data) {
+                        if (data.code == "200") {
+                            data.data.forEach((item, index) => {
+                                typeFilters.push({"text": item.name, "value":item.id})
+                            })
+                        } else {
+                            this.$message.erro(data.msg)
+                        }
+                    })
+                });
+            },
+            submitUpload() {
+                this.$refs.upload.submit();
+            },
+            beforeUpload(file, fileList) {
+                const isXls = file.type === 'application/vnd.ms-excel'
+                const isXlx = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                if (isXls || isXlx) {
+                    return
                 }
+                this.$message.error('只能上传Excel！')
+                return false
             },
-            clearFilter() {
-                this.$refs.filterTable.clearFilter();
-                this.tableData = tableData.slice(0, this.pageSize)
-                this.currentData = tableData
-                this.changePagination(currentData.length, 1)
-            },
-            formatter(row, column) {
-                return row.address;
-            },
-            filterType(value, row) {
-                return row.type === value;
-            },
-            filterHandler(value, row, column) {
-                const property = column['property'];
-                return row[property] === value;
+            handleSuccess(res, file, fileList) {
+                if (res.code == "200") {
+                    this.$message.success("上传成功")
+                } else {
+                    this.$message.error(res.msg)
+                }
             },
             handleSizeChange(val) {
                 this.tableData = currentData.slice(0, val);
@@ -168,14 +194,14 @@
             },
             reformData(filter) {
                 var key = Object.getOwnPropertyNames(filter)[0]
-                if (key == "date")
+                if (key == "jzrq")
                     selectDates = new Set(filter[key])
                 else
                     selectTypes = new Set(filter[key])
 
                 if (selectDates.size != 0 || selectTypes.size != 0) {
-                    currentData = tableData.filter(item => selectDates.size == 0 || selectDates.has(item["date"]))
-                    currentData = currentData.filter(item => selectTypes.size == 0 || selectTypes.has(item["type"]))
+                    currentData = tableData.filter(item => selectDates.size == 0 || selectDates.has(item["jzrq"]))
+                    currentData = currentData.filter(item => selectTypes.size == 0 || selectTypes.has(item["zymc"]))
                 } else {
                     currentData = tableData
                 }
@@ -189,6 +215,9 @@
                 this.total = total;
                 this.currentPage = currentPage ? currentPage : 1
                 if (pageSize) this.pageSize = pageSize
+            },
+            getConditionSql() {
+
             }
         }
     }

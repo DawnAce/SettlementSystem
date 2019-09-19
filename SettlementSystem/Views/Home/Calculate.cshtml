@@ -9,33 +9,33 @@
 
 <div id="app">
     <template>
-        <span>医院：</span>
-        <el-select v-model="hospitalValues" 
-                   multiple
-                   value-key="value" 
-                   placeholder="请选择医院">
-            <el-option v-for="item in hospitalOptions"
-                       :key="item.value"
-                       :label="item.label"
-                       :value="item">
-                {{item.label}}
-            </el-option>
-        </el-select>
-
-        <span style="margin-left: 5px;">预约渠道：</span>
-        <el-select v-model="channelValues"
-                   multiple
-                   placeholder="请选择渠道">
-            <el-option v-for="item in channelOptions"
-                       :key="item.value"
-                       :label="item.label"
-                       :value="item">
-                {{item.label}}
-            </el-option>
-        </el-select>
-        <el-button type="primary" v-on:click="initTable()">计算</el-button>
-
-        <el-button type="primary" v-on:click="exportTable()" style="float: right">导出表格</el-button>
+        <span>科室：</span>
+        <el-cascader ref="hospitalSelection"
+                     :options="hospitalOptions"
+                     :props="{ multiple: true }"
+                     placeholder="请选择医院"
+                     expand-trigger="hover"
+                     collapse-tags
+                     v-model="hospitalDefault">
+        </el-cascader>
+        <span style="margin-left:10px">渠道：</span>
+        <el-cascader ref="typeSelection"
+                     :options="typeOptions"
+                     :props="{ multiple: true }"
+                     placeholder="请选择渠道"
+                     collapse-tags
+                     v-model="typeDefault">
+        </el-cascader>
+        <span style="margin-left:10px">月份：</span>
+        <el-cascader ref="dateSelection"
+                     :options="dateOptions"
+                     :props="{ multiple: true }"
+                     placeholder="请选择日期"
+                     collapse-tags
+                     v-model="dateDefault">
+        </el-cascader>
+        <el-button type="primary" v-on:click="exportTable()" style="float: right;">导出表格</el-button>
+        <el-button type="primary" v-on:click="calculate()" style="float: right; margin-right:10px;">计算</el-button>
 
         <el-table id="hospitalTable"
                   ref="hospitalTable"
@@ -43,13 +43,24 @@
                   border
                   :summary-method="getSummaries"
                   show-summary
-                  lazy
                   row-key="id"
-                  :load="load"
                   :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
                   style="margin-top: 10px;width: 100%">
-            <el-table-column property="mc"
-                             label="医院名称"
+            <el-table-column property="zymc"
+                             label="总院名称"
+                             fixed
+                             sortable
+                             width="200">
+            </el-table-column>
+            <el-table-column property="fymc"
+                             label="分院名称"
+                             fixed
+                             sortable
+                             width="200">
+            </el-table-column>
+            <el-table-column property="ks"
+                             label="科室名称"
+                             fixed
                              sortable
                              width="200">
             </el-table-column>
@@ -72,11 +83,9 @@
             <el-table-column prop="qd"
                              label="渠道">
             </el-table-column>
-            <el-table-column prop="bz"
-                             label="备注">
-            </el-table-column>
             <el-table-column prop="ze"
                              sortable
+                             fixed="right"
                              label="总额">
             </el-table-column>
         </el-table>
@@ -88,64 +97,130 @@
         label: "长峰医院"
     }]
 
-    var channelOptions = [{
+    var typeOptions = [{
         value: "114",
         label: "114"
     },{
-        value: "ky",
+        value: "快医",
         label: "快医"
     }]
+    var typeDefalut = ["114", "快医"]
 
     var nodeCount = 1   // only to identify different tree node
     var Main = {
         data() {
             return {
                 tableData: [],
-                hospitalOptions: hospitalOptions,
-                channelOptions: channelOptions,
-                hospitalValues: hospitalOptions,
-                channelValues: channelOptions
+                dateOptions: [],
+                dateDefault: [],
+                hospitalOptions: [],
+                hospitalDefault: [],
+                typeOptions: typeOptions,
+                typeDefault: typeDefalut,
+                needInitCount: 2
             }
         },
         created() {
-            this.initTable();
+            this.initDateOptions()
+            this.initHospitalOptions()
+        },
+        watch: {
+            needInitCount(val, oldVal) {
+                 if (val == 0)
+                    this.calculate()
+            }
         },
         methods: {
-            initTable() {
-                var hospital = this.hospitalValues
-                if (hospital.length == 0) {
-                    this.$message.error('必须选择至少一所医院！')
-                    return
-                }
-                var qd = this.channelValues
-                if (qd.length == 0) {
-                    this.$message.error('你没选渠道怎么算！')
-                    return
-                }
-                var hospitalIds = hospital.map(item => item.value)
-                var qdIds = qd.map(item => item.value)
-                var url = "https://@Context.Request.Host" + "/api/MyApi/CalculateHospital/" + hospitalIds + "?qd=" + qdIds;
+            initDateOptions() {
+                var year = new Date().getFullYear()
+                var month = new Date().getMonth()
+                if (month < 10) month = "0" + month
 
+                var url = "https://@Context.Request.Host" + "/api/MyApi/GetDateChoices?year=" + year;
+
+                var holder = this
                 const req = new Request(url, { method: "GET" })
+                fetch(req).then(function (response) {
+                    response.json().then(function (data) {
+                        if (data.code == "200") {
+                            data.data.forEach((item, index) => {
+                                holder.dateOptions.push({"value": item.result.replace("-",""), "label":item.result})
+                            })
+                           holder.dateDefault.push(year + "" + month)
+                        } else {
+                            this.$message.erro(data.msg)
+                        }
+                        holder.$nextTick(function () {
+                            --holder.needInitCount;
+                        });
+                    })
+                });
+            },
+            initHospitalOptions() {
+                var url = "https://@Context.Request.Host" + "/api/MyApi/GetHospitalTree"
+
+                var holder = this
+                const req = new Request(url, { method: "GET" })
+                fetch(req).then(function (response) {
+                    response.json().then(function (data) {
+                        if (data.code == "200") {
+                            var root = { "value": "0", "label": "全部" }
+                            root["children"] = data.data.children
+                            holder.hospitalOptions = [root]
+                            data.data.default.forEach((item, index) => {
+                                holder.hospitalDefault.push(['0', ...item])
+                            })
+                        } else {
+                            this.$message.error(data.msg)
+                        }
+                        holder.$nextTick(function () {
+                            --holder.needInitCount;
+                        });
+                    })
+                });
+            },
+            calculate() {
+                var hospitalIds = []
+                this.$refs.hospitalSelection.getCheckedNodes(true)
+                    .forEach((node, index) => {
+                        hospitalIds.push(node.data.value)
+                    });
+                var types = []
+                this.$refs.typeSelection.getCheckedNodes(true)
+                    .forEach((node, index) => {
+                        types.push(node.data.value)
+                    })
+
+                var dateIds = []
+                this.$refs.dateSelection.getCheckedNodes(true)
+                    .forEach((node, index) => {
+                        dateIds.push(node.data.value)
+                    })
+
+                var url = "https://@Context.Request.Host" + "/api/MyApi/Calculate"
+                const req = new Request(url, {
+                    method: "POST",
+                    headers: {
+                      'content-type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        "ksIds": hospitalIds,
+                        "feetypes": types,
+                        "dates": dateIds
+                    })
+                })
 
                 var holder = this
                 fetch(req).then(function (response) {
                     response.json().then(function (data) {
-                        data.forEach((item, index) => {
-                            item.hasChildren = true
-                            item.level = 1
-                            item.qd = holder.convertQdCode(item.qd)
-                            item.children = []
-                        })
-
-                        // 因为如果已经有了展开项，那么只会变第一层的树节点（增加的展开节点还在），所以需要先清空table，然后调用nextTick方法，在清空表格后，再更新为最新数据
-                        holder.tableData = []   
-                        holder.$nextTick(function () {
-                            holder.tableData = data
-                        })
+                        if (data.code == "200") {
+                            holder.tableData = data.data
+                        } else {
+                            this.$message.error(data.msg)
+                        }
                     });
                 }).catch(function (error) {
-                    alert(error)
+                    holder.$message.error(error)
                 })
             },
             getSummaries(param) {
@@ -153,7 +228,7 @@
                 const sums = [];
                 columns.forEach((column, index) => {
                     if (index === 0) {
-                        sums[index] = '总收入';
+                        sums[index] = '总计';
                         return;
                     } else if (column.property == 'bz') {
                         sums[index] = "N/A"
@@ -175,85 +250,7 @@
 
                 return sums;
             },
-            load(tree, treeNode, resolve) {
-                // 当qd字段有值时，说明已经到叶节点，不能再展开了
-                if (tree.qd != null && tree.qd != "") {
-                    resolve([])
-                    return
-                }
-                var holder = this
-                var fqd = tree.level > 1   //从第三层起才分渠道，即当前为第二层节点
-
-                // 只需要医院id或者科室id的集合
-                this.getDetailProcess(tree.id.split(";")[0], function (data) {
-                        var newData = holder.formatData(data, fqd)
-                    newData.forEach((item, index) => {
-                        item.id += ";" + holder.formatNumber(nodeCount++)
-                        item.level = tree.level + 1
-                        item.qd = holder.convertQdCode(item.qd)
-                    })
-                    resolve(newData)
-                })
-            },
-            // 按照科室渠道进行计算
-            getDetailProcess(id, callback) {
-                var qd = this.channelValues.map(item => item.value)
-                var url = "https://@Context.Request.Host" + "/api/MyApi/CalculateDepartment/" + id + "?qd=" + qd;
-                const req = new Request(url, { method: "GET" })
-
-                fetch(req).then(function (response) {
-                    response.json().then(function (value) {
-                        callback(value)
-                    });
-                }).catch(function (error) {
-                    alert(error)
-                })
-            },
-            formatNumber(num) {
-                return "000".substring(0,3-num.toString().length)+num
-            },
-            // 合并显示数据
-            formatData(data, fqd) {
-                var m = new Map();
-                data.forEach((item, index) => {
-                    var key = item.mc + ";" + item.xsjh
-                    if (fqd)
-                        key += ";" + item.qd
-                    if (m.has(key)) {
-                        var row = m.get(key)
-                        if (!row.idSet.has(item.id)) {
-                            row.id += "," + item.id
-                            row.idSet.add(item.id)
-                            row.ks += "、" + item.ks
-                        }
-
-                        row.wjzl += item.wjzl
-                        row.qxl += item.qxl
-                        row.jzl += item.jzl
-                        row.yyzl += item.yyzl
-                        row.ze += item.ze
-                    } else {
-                        item.idSet = new Set([item.id])
-                        m.set(key, Object.assign({}, item))
-                    }
-                })
-
-                var tempData = new Array()
-                m.forEach(function (value, key, map) {
-                    delete value.idSet
-                    value.mc = value.ks     // 需要显示科室的名称集合
-                    value.hasChildren = !fqd    //如果要分渠道，说明已经到了叶子节点了
-                    if(!fqd) value.qd = ""   //不分渠道的话，所展示的为所选的渠道，所以不用显示
-                    tempData.push(value)
-                })
-                return tempData
-            },
-            convertQdCode(qdCode) {
-                if (qdCode == 'ky')
-                    return "快医"
-                return qdCode
-            },
-            exportTable(){
+            exportTable() {
                 /* generate workbook object from table */
                 var wb = XLSX.utils.table_to_book(document.querySelector('#hospitalTable'), { raw: true })
                 /* get binary string as output */

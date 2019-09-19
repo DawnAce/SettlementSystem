@@ -1,4 +1,12 @@
-﻿using SettlementSystem.Models;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using MySqlX.XDevAPI.Common;
+using Newtonsoft.Json;
+using RestSharp;
+using SettlementSystem.Dao;
+using SettlementSystem.Models;
+using SettlementSystem.Models.PO;
+using SettlementSystem.Models.Temp;
+using SqlSugar;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,63 +17,141 @@ namespace SettlementSystem.Service
 {
     public class CalculateService
     {
-        public IList<HospitalVO> GetHospitalResult(string id, string typeArray)
+        public static MyResponse CalculateFee(string[] ksIds, string[] feeTypes, string[] dates)
         {
-            var dataService = new DataService();
-            var departments = dataService.GetHospitals(id, typeArray);
-            var rules = dataService.GetDepartmentCalculateRules();
+            var db = SugarDao.GetInstance();
+            var orgMap = new Dictionary<string, JsonObject>();
+            db.Queryable<OrganizationPO>()
+                .ToList()
+                .ForEach(x => {
+                    orgMap[x.Id] = new JsonObject { ["Name"] = x.Name };
+                    if (x.Type != 3)
+                        orgMap[x.Id]["Children"] = new List<string>();
+                    //将自己记录到父节点，防止出现本月没人挂号，不显示统计的问题
+                    if (x.Type != 1)
+                        ((List<string>)(orgMap[x.Id.Substring(0, (x.Type - 1) * 3)]["Children"])).Add(x.Id);
+                });
 
-            var rulesMap = new Dictionary<string, Rules>();
-            foreach (var rule in rules)
-                rulesMap.Add(rule.Id, rule);
-            var hospitalsMap = new Dictionary<string, HospitalVO>();
-            
-            foreach(var department in departments)
+            var ksSet = new HashSet<string>(ksIds);
+            var dateSet = new HashSet<string>(dates);
+            var typeSet = new HashSet<string>(feeTypes);
+            var temp = new List<TempCalculateYyxx>();
+            db.Queryable<YyxxPO>()
+                .Where(x => dateSet.Contains(x.Id.Substring(0, 6)))
+                .Where(x => ksSet.Contains(x.Ksczid))
+                .Where(x => typeSet.Contains(x.Jsqd))
+                .GroupBy(x => x.Ddzt).GroupBy(x => x.Ksczid).GroupBy(x => x.Jsqd)
+                .Select(x => new { ksczid = x.Ksczid, ddzt = x.Ddzt, jsqd = x.Jsqd, count = SqlFunc.AggregateCount(1) })
+                .ToList()
+                .ForEach(x => temp.Add(
+                    new TempCalculateYyxx {
+                        Ksczid = x.ksczid, Ddzt = ParseDdzt(x.ddzt), Jsqd = x.jsqd, Count = x.count
+                    })
+                );
+
+            var ruleMap = new Dictionary<string, NormalRulesPO>();
+            db.Queryable<NormalRulesPO>()
+                .Where(x => ksSet.Contains(x.Id.Substring(0, 9)))
+                .ToList()
+                .ForEach(x => ruleMap[x.Id] = x);
+
+            var resultList = new List<HospitalVO>();
+            var resultMap = new Dictionary<string, HospitalVO>();
+            foreach(var obj in temp)
             {
-                var rule = rulesMap[department.Id];
-                var hospitalId = department.Id.Substring(0, 3);
-                HospitalVO hospital = null;
-                if (hospitalsMap.ContainsKey(hospitalId))
-                    hospital = hospitalsMap[hospitalId];
-                else
+                var zyId = obj.Ksczid.Substring(0, 3);
+                var fyId = obj.Ksczid.Substring(0, 6);
+                HospitalVO zyObj, fyObj;
+                if (!resultMap.ContainsKey(zyId))
                 {
-                    hospital = new HospitalVO
-                    {
-                        Id = hospitalId,
-                        Mc = department.Mc
-                    };
-                    hospitalsMap.Add(hospitalId, hospital);
+                    resultMap[zyId] = new HospitalVO { Id = zyId, Zymc = (string)orgMap[zyId]["Name"]};
+                    resultList.Add(resultMap[zyId]);
                 }
+                zyObj = resultMap[zyId];
 
-                hospital.Wjzl += department.Wjzl;
-                hospital.Qxl += department.Qxl;
-                hospital.Jzl += department.Jzl;
-                hospital.Yyzl += department.Wjzl + department.Qxl + department.Jzl;
-                hospital.Ze += department.Wjzl * rule.Wjzje + department.Qxl * rule.Qxje + department.Jzl * rule.Dzje;
+                if (!resultMap.ContainsKey(fyId))
+                {
+                    resultMap[fyId] = new HospitalVO { Id = fyId, Fymc = (string)orgMap[fyId]["Name"]};
+                    if (zyObj.Children == null)
+                        zyObj.Children = new List<HospitalVO>();
+                    zyObj.Children.Add(resultMap[fyId]);
+                    //如果组织结构中有科室，先创建所有科室，防止没人挂号，导致不显示的问题
+                    if(((List<string>)(orgMap[fyId]["Children"])).Count != 0)
+                    {
+                        resultMap[fyId].Children = new List<HospitalVO>();
+                        ((List<string>)(orgMap[fyId]["Children"]))
+                            .ForEach(x => {
+                                var tempKsObj = new HospitalVO { Id = x, Ks = (string)(orgMap[x]["Name"])};
+                                resultMap[fyId].Children.Add(tempKsObj);
+                                resultMap[x] = tempKsObj;
+                            });
+                    }
+                }
+                    
+                fyObj = resultMap[fyId];
+                var fee = ruleMap.ContainsKey(obj.Ksczid + obj.Ddzt) ? ruleMap[obj.Ksczid + obj.Ddzt].Fee : 0;
+                var ksObj = resultMap[obj.Ksczid];
+                if (String.IsNullOrEmpty(ksObj.Qd))
+                    ksObj.Qd = obj.Jsqd;
+                //因为一个科室可能有很多个ddzt，所以需要针对当前订单状态得到一个Obj，再加到已有的Obj中
+                HospitalVO newObj = GetObj(obj, obj.Count * fee);
+
+                AddCount(zyObj, newObj, obj.Ddzt);
+                AddCount(fyObj, newObj, obj.Ddzt);
+                AddCount(ksObj, newObj, obj.Ddzt);
             }
 
-            var result = new List<HospitalVO>(hospitalsMap.Values);
-            return result;
+            // Sort
+            foreach(var item in resultMap)
+            {
+                if (item.Value.Children == null)
+                    continue;
+                item.Value.Children.Sort((x, y) => (int)(y.Ze - x.Ze));
+            }
+            resultList.Sort((x,y) => (int)(y.Ze - x.Ze));
+            //如果只有一个分院，那么去掉一个层级
+            resultList.ForEach(item =>
+            {
+                if(item.Children.Count == 1)
+                {
+                    var fymc = item.Children[0].Fymc;
+                    item.Children = item.Children[0].Children;
+                    item.Children.ForEach(x => x.Fymc = fymc);
+                }
+            });
+
+            return MyResponse.Success(resultList);
         }
 
-        public IList<HospitalVO> GetDepartmentResult(string id, string typeArray)
+        private static string ParseDdzt(string ddzt)
         {
-            var dataService = new DataService();
-            var departments = dataService.GetDepartments(id, typeArray);
-            var rules = dataService.GetDepartmentCalculateRules();
+            if (ddzt.Equals("取消")) return "qx";
+            else if (ddzt.Equals("已就诊")) return "yjz";
+            else return "wdz";
+        }
 
-            var rulesMap = new Dictionary<string, Rules>();
-            foreach(var rule in rules)
-                rulesMap.Add(rule.Id, rule);
+        private static void AddCount(HospitalVO target, HospitalVO source, string ddzt)
+        {
+            if(ddzt.Equals("取消"))
+                target.Qxl += source.Qxl;
+            else if(ddzt.Equals("未到诊"))
+                target.Wjzl += source.Wjzl;
+            else
+                target.Jzl += source.Jzl;
+            target.Yyzl += source.Yyzl;
+            target.Ze += source.Ze;
+        }
 
-            foreach(var department in departments)
-            {
-                var rule = rulesMap[department.Id];
-                department.Yyzl = department.Wjzl + department.Qxl + department.Jzl;
-                department.Ze = department.Wjzl * rule.Wjzje + department.Qxl * rule.Qxje + department.Jzl * rule.Dzje;
-            }
-
-            return departments;
+        public static HospitalVO GetObj(TempCalculateYyxx obj, double ze)
+        {
+            var newObj = new HospitalVO { Id = obj.Ksczid , Qd = obj.Jsqd, Ze = ze};
+            if (obj.Ddzt.Equals("qx"))
+                newObj.Qxl = obj.Count;
+            else if (obj.Ddzt.Equals("yjz"))
+                newObj.Jzl = obj.Count;
+            else newObj.Wjzl = obj.Count;
+            newObj.Yyzl = obj.Count;
+            return newObj;
         }
     }
 }

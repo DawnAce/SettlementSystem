@@ -65,7 +65,7 @@ namespace SettlementSystem.Service
 
             var dao = SugarDao.GetInstance();
             GetMap(dao);
-            var operationList = new List<Yyxx>();
+            var operationList = new List<YyxxPO>();
             for (int i = sheet.FirstRowNum + 3; i <= sheet.LastRowNum; ++i)
             {
                 var row = sheet.GetRow(i);
@@ -75,12 +75,12 @@ namespace SettlementSystem.Service
                 operationList.Add(yyxx);
                 if (operationList.Count == SAVEINTERVAL)
                 {
-                    dao.Saveable<Yyxx>(operationList).ExecuteReturnEntity();
+                    dao.Saveable<YyxxPO>(operationList).ExecuteReturnEntity();
                     operationList.Clear();
                 }
             }
             if (operationList.Count != 0)
-                dao.Saveable<Yyxx>(operationList).ExecuteReturnEntity();
+                dao.Saveable<YyxxPO>(operationList).ExecuteReturnEntity();
 
             //delete file
             new FileInfo(fullPath).Delete();
@@ -109,9 +109,9 @@ namespace SettlementSystem.Service
             }
         }
 
-        private static Yyxx ParseRow(IRow row)
+        private static YyxxPO ParseRow(IRow row)
         {
-            var result = new Yyxx();
+            var result = new YyxxPO();
             
             var cellCount = row.LastCellNum;
             var map = GetMap();
@@ -135,7 +135,9 @@ namespace SettlementSystem.Service
                 }
                 SetModelValue(fildName, value, result);
             }
-
+            //var key = result.Fymc.Trim() + result.Ks.Trim();
+            //if (key.Equals("北京中鸿口腔医院儿童口腔科"))
+            //    Console.WriteLine("Wrong");
             result.Ksczid = organizationMap[result.Fymc.Trim() + result.Ks.Trim()];
             return result;
         }

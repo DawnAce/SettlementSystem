@@ -18,7 +18,8 @@
             <div slot="tip" class="el-upload__tip">只能上传Excel文件，且只能上传单个文件</div>
         </el-upload>
         <span>科室：</span>
-        <el-cascader :options="hospitalOptions"
+        <el-cascader ref="hospitalSelection"
+                     :options="hospitalOptions"
                      :props="hospitalProps"
                      placeholder="请选择医院"
                      expand-trigger="hover"
@@ -26,17 +27,17 @@
                      v-model="hospitalDefault">
         </el-cascader>
         <span style="margin-left:10px">月份：</span>
-        <el-cascader :options="dateOptions"
+        <el-cascader ref="dateSelection"
+                     :options="dateOptions"
                      :props="dateProps"
                      placeholder="请选择日期"
                      collapse-tags
                      v-model="dateDefault">
         </el-cascader>
-        <el-button type="primary" v-on:click="" style="float: right">查询</el-button>
-        <el-table ref="filterTable"
+        <el-button type="primary" v-on:click="query(1,true)" style="float: right">查询</el-button>
+        <el-table ref="displayTable"
                   :data="tableData"
                   border
-                  v-on:filter-change="reformData"
                   style="width: 100%; margin-top:10px;">
             <el-table-column prop="fymc"
                              label="分院名称">
@@ -75,7 +76,7 @@
         <el-pagination v-on:size-change="handleSizeChange"
                        v-on:current-change="handleCurrentChange"
                        :current-page="currentPage"
-                       :page-sizes="[50, 100]"
+                       :page-sizes="[20, 50, 100]"
                        :page-size="pageSize"
                        layout="total, sizes, prev, pager, next, jumper"
                        :total="total">
@@ -95,19 +96,25 @@
                 typeFilters: [],
                 total: 0,
                 currentPage: 1,
-                pageSize: 50,
+                pageSize: 20,
                 dateProps: { multiple: true },
                 dateOptions: [],
                 dateDefault: [],
                 hospitalProps: { multiple: true},
                 hospitalOptions: [],
-                hospitalDefault: []
+                hospitalDefault: [],
+                needInitCount: 2
             }
         },
         created() {
             this.initDateOptions()
             this.initHospitalOptions()
-            //this.setTableData(this.tableData, this.total);
+        },
+        watch: {
+            needInitCount(val, oldVal) {
+                 if (val == 0)
+                    this.query(1, true)
+            }
         },
         methods: {
             initDateOptions() {
@@ -123,12 +130,15 @@
                     response.json().then(function (data) {
                         if (data.code == "200") {
                             data.data.forEach((item, index) => {
-                                holder.dateOptions.push({"value": item.result, "label":item.result})
+                                holder.dateOptions.push({"value": item.result.replace("-",""), "label":item.result})
                             })
-                           holder.dateDefault.push(year + "-" + month)
+                           holder.dateDefault.push(year + "" + month)
                         } else {
                             this.$message.erro(data.msg)
                         }
+                        holder.$nextTick(function () {
+                            --holder.needInitCount;
+                        });
                     })
                 });
             },
@@ -140,26 +150,58 @@
                 fetch(req).then(function (response) {
                     response.json().then(function (data) {
                         if (data.code == "200") {
-                            holder.hospitalOptions = data.data.children;
-                            holder.hospitalDefault = data.data.default
+                            var root = { "value": "0", "label": "全部" }
+                            root["children"] = data.data.children
+                            holder.hospitalOptions = [root]
+                            data.data.default.forEach((item, index) => {
+                                holder.hospitalDefault.push(['0', ...item])
+                            })
                         } else {
-                            this.$message.erro(data.msg)
+                            this.$message.error(data.msg)
                         }
+                        holder.$nextTick(function () {
+                            --holder.needInitCount;
+                        });
                     })
                 });
             },
-            setTableData(tableData, totalCount) {
-                var url = "https://@Context.Request.Host" + "/api/MyApi/GetPageData"
+            query(pageIndex, needTotal) {
+                var hospitalIds = []
+                this.$refs.hospitalSelection.getCheckedNodes(true)
+                    .forEach((node, index) => {
+                        hospitalIds.push(node.data.value)
+                    });
 
-                const req = new Request(url, { method: "GET" })
+                var dateIds = []
+                this.$refs.dateSelection.getCheckedNodes(true)
+                    .forEach((node, index) => {
+                        dateIds.push(node.data.value)
+                    })
+                //string ksIds,string date, int pageIndex, int pageSize, bool needTotalCount
+
+                var url = "https://@Context.Request.Host" + "/api/MyApi/GetPageData"
+                var holder = this
+                const req = new Request(url, {
+                    method: "POST",
+                    headers: {
+                      'content-type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        "ksIds": hospitalIds,
+                        "dates": dateIds,
+                        "pageIndex": pageIndex,
+                        "pageSize": this.pageSize,
+                        "needTotalCount": needTotal
+                    })
+                })
                 fetch(req).then(function (response) {
                     response.json().then(function (data) {
                         if (data.code == "200") {
-                            data.data.forEach((item, index) => {
-                                typeFilters.push({"text": item.name, "value":item.id})
-                            })
+                            holder.tableData = data.data.list
+                            if (needTotal)
+                                holder.total = data.data.totalCount
                         } else {
-                            this.$message.erro(data.msg)
+                            this.$message.error(data.msg)
                         }
                     })
                 });
@@ -184,13 +226,13 @@
                 }
             },
             handleSizeChange(val) {
-                this.tableData = currentData.slice(0, val);
                 this.pageSize = val
+                this.query(this.currentPage, false)
             },
             handleCurrentChange(val) {
-                var start = (val - 1) * 1
-                var end = start + this.pageSize;
-                this.tableData = currentData.slice(start, end)
+                if (this.currentPage == val) return
+                this.currentPage = val
+                this.query(this.currentPage, false)
             },
             reformData(filter) {
                 var key = Object.getOwnPropertyNames(filter)[0]
@@ -215,9 +257,6 @@
                 this.total = total;
                 this.currentPage = currentPage ? currentPage : 1
                 if (pageSize) this.pageSize = pageSize
-            },
-            getConditionSql() {
-
             }
         }
     }

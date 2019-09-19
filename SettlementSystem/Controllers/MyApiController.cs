@@ -9,11 +9,15 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualStudio.Web.CodeGeneration.Contracts.Messaging;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.Formula.Functions;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
+using RestSharp;
 using SettlementSystem.Models;
+using SettlementSystem.Models.DTO;
+using SettlementSystem.Models.PostType;
 using SettlementSystem.Service;
 
 namespace SettlementSystem.Controllers
@@ -43,18 +47,13 @@ namespace SettlementSystem.Controllers
             return "{\"id\":" + id + "}";
         }
 
-        [HttpGet("{id}")]
-        [ActionName("CalculateDepartment")]
-        public string QueryResultByHospitalId(string id, string qd)
+        [HttpPost]
+        [ActionName("Calculate")]
+        public string Calculate([FromBody]CalculateDTO calculateRequest)
         {
-            return JsonConvert.SerializeObject(new CalculateService().GetDepartmentResult(id, qd));
-        }
-
-        [HttpGet("{id}")]
-        [ActionName("CalculateHospital")]
-        public string QueryHospitalResult(string id, string qd)
-        {
-            return JsonConvert.SerializeObject(new CalculateService().GetHospitalResult(id, qd));
+            return JsonConvert.SerializeObject(
+                CalculateService.CalculateFee(calculateRequest.KsIds, calculateRequest.FeeTypes, calculateRequest.Dates)
+            );
         }
 
         [HttpPost]
@@ -66,11 +65,18 @@ namespace SettlementSystem.Controllers
             return JsonConvert.SerializeObject(FileService.UploadFile(file));
         }
 
-        [HttpGet]
+        [HttpPost]
         [ActionName("GetPageData")]
-        public string GetPageData(string ksIds,string date, int pageIndex, int pageSize, bool needTotalCount)
+        public string GetPageData([FromBody]QueryDTO queryRequest)
         {
-            return JsonConvert.SerializeObject(DataService.GetYyxxByPagenation(ksIds, date, pageIndex, pageSize, needTotalCount));
+            return JsonConvert.SerializeObject(
+                DataService.GetYyxxByPagenation(
+                    queryRequest.KsIds, 
+                    queryRequest.Dates, 
+                    queryRequest.PageIndex,
+                    queryRequest.PageSize,
+                    queryRequest.NeedTotalCount)
+            );
         }
 
         [HttpGet]

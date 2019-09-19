@@ -132,9 +132,9 @@ namespace SettlementSystem.Service
 
         private static void AddCount(HospitalVO target, HospitalVO source, string ddzt)
         {
-            if(ddzt.Equals("取消"))
+            if(ddzt.Equals("qx"))
                 target.Qxl += source.Qxl;
-            else if(ddzt.Equals("未到诊"))
+            else if(ddzt.Equals("wdz"))
                 target.Wjzl += source.Wjzl;
             else
                 target.Jzl += source.Jzl;

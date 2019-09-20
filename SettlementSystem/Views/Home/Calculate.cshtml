@@ -230,7 +230,7 @@
                     if (index === 0) {
                         sums[index] = '总计';
                         return;
-                    } else if (column.property == 'bz') {
+                    } else if (column.property=='bz' || column.property=='fymc' || column.property=='ks') {
                         sums[index] = "N/A"
                         return;
                     }

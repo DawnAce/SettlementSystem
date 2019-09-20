@@ -119,11 +119,7 @@ namespace SettlementSystem.Service
             {
                 object value = row.GetCell(i)?.ToString();
                 var fildName = Char.ToUpper(map[i][0]) + map[i].Substring(1);
-                if (fildName.Equals("Id"))
-                {
-                    value = DateTime.Now.ToString("yyyyMM") + value;
-                }
-                else if (fildName.Equals("Ghf") || fildName.Equals("yhjg"))
+                if (fildName.Equals("Ghf") || fildName.Equals("yhjg"))
                 {
                     value = String.IsNullOrEmpty((string)value) ? "0" : value;
                     value = Int32.Parse((string)value);
@@ -135,10 +131,8 @@ namespace SettlementSystem.Service
                 }
                 SetModelValue(fildName, value, result);
             }
-            //var key = result.Fymc.Trim() + result.Ks.Trim();
-            //if (key.Equals("北京中鸿口腔医院儿童口腔科"))
-            //    Console.WriteLine("Wrong");
             result.Ksczid = organizationMap[result.Fymc.Trim() + result.Ks.Trim()];
+            result.Id = result.Jzrq.Replace("-", "").Substring(0, 6) + result.Id;
             return result;
         }
 

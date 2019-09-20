@@ -4,19 +4,6 @@
 
 <div id="app">
     <template>
-        <el-upload class="upload-excel"
-                   ref="upload"
-                   :action="uploadPath"
-                   :before-upload="beforeUpload"
-                   :limit="1"
-                   :auto-upload="false"
-                   :on-success='handleSuccess'
-                   list-type='text'
-                   style="width:300px; margin-bottom:10px;">
-            <el-button slot="trigger" size="small" type="primary">选取文件</el-button>
-            <el-button style="margin-left: 10px;" size="small" type="success" v-on:click="submitUpload">上传到服务器</el-button>
-            <div slot="tip" class="el-upload__tip">只能上传Excel文件，且只能上传单个文件</div>
-        </el-upload>
         <span>科室：</span>
         <el-cascader ref="hospitalSelection"
                      :options="hospitalOptions"
@@ -39,11 +26,11 @@
                   :data="tableData"
                   border
                   style="width: 100%; margin-top:10px;">
-            <el-table-column prop="fymc"
-                             label="分院名称">
-            </el-table-column>
             <el-table-column prop="zymc"
                              label="总院名称">
+            </el-table-column>
+            <el-table-column prop="fymc"
+                             label="分院名称">
             </el-table-column>
             <el-table-column prop="zymc"
                              label="属于">
@@ -206,25 +193,6 @@
                     })
                 });
             },
-            submitUpload() {
-                this.$refs.upload.submit();
-            },
-            beforeUpload(file, fileList) {
-                const isXls = file.type === 'application/vnd.ms-excel'
-                const isXlx = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                if (isXls || isXlx) {
-                    return
-                }
-                this.$message.error('只能上传Excel！')
-                return false
-            },
-            handleSuccess(res, file, fileList) {
-                if (res.code == "200") {
-                    this.$message.success("上传成功")
-                } else {
-                    this.$message.error(res.msg)
-                }
-            },
             handleSizeChange(val) {
                 this.pageSize = val
                 this.query(this.currentPage, false)
@@ -233,30 +201,6 @@
                 if (this.currentPage == val) return
                 this.currentPage = val
                 this.query(this.currentPage, false)
-            },
-            reformData(filter) {
-                var key = Object.getOwnPropertyNames(filter)[0]
-                if (key == "jzrq")
-                    selectDates = new Set(filter[key])
-                else
-                    selectTypes = new Set(filter[key])
-
-                if (selectDates.size != 0 || selectTypes.size != 0) {
-                    currentData = tableData.filter(item => selectDates.size == 0 || selectDates.has(item["jzrq"]))
-                    currentData = currentData.filter(item => selectTypes.size == 0 || selectTypes.has(item["zymc"]))
-                } else {
-                    currentData = tableData
-                }
-
-                this.tableData = currentData.slice(0, this.pageSize)
-
-                //change totalSize, totalPages, current page to 1
-                this.changePagination(currentData.length, 1)
-            },
-            changePagination(total, currentPage, pageSize) {
-                this.total = total;
-                this.currentPage = currentPage ? currentPage : 1
-                if (pageSize) this.pageSize = pageSize
             }
         }
     }

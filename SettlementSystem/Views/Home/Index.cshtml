@@ -1,8 +1,65 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Query Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div id="app">
+    <template>
+        <el-upload class="upload-excel"
+                   ref="upload"
+                   :action="uploadPath"
+                   :before-upload="beforeUpload"
+                   :limit="1"
+                   :auto-upload="false"
+                   :on-success='handleSuccess'
+                   list-type='text'
+                   style="width:300px; margin-bottom:10px;">
+            <el-button slot="trigger" size="small" type="primary">选取文件</el-button>
+            <el-button style="margin-left: 10px;" size="small" type="success" v-on:click="submitUpload">上传到服务器</el-button>
+            <div slot="tip" class="el-upload__tip">只能上传Excel文件，且只能上传单个文件</div>
+        </el-upload>
+    </template>
 </div>
+<script>
+    var selectDates = new Set();
+    var selectTypes = new Set();
+
+    var Main = {
+        data() {
+            return {
+                uploadPath:"https://@Context.Request.Host" + "/api/MyApi/Upload",
+            }
+        },
+        methods: {
+            submitUpload() {
+                this.$refs.upload.submit();
+            },
+            beforeUpload(file, fileList) {
+                const isXls = file.type === 'application/vnd.ms-excel'
+                const isXlx = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                if (isXls || isXlx) {
+                    return
+                }
+                this.$message.error('只能上传Excel！')
+                return false
+            },
+            handleSuccess(res, file, fileList) {
+                if (res.code == "200") {
+                    this.$message.success("上传成功")
+                } else {
+                    this.$message.error(res.msg)
+                }
+            },
+            handleSizeChange(val) {
+                this.pageSize = val
+                this.query(this.currentPage, false)
+            },
+            handleCurrentChange(val) {
+                if (this.currentPage == val) return
+                this.currentPage = val
+                this.query(this.currentPage, false)
+            }
+        }
+    }
+    var Ctor = Vue.extend(Main)
+    new Ctor().$mount('#app')
+</script>

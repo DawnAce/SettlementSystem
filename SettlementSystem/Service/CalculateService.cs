@@ -23,7 +23,14 @@ namespace SettlementSystem.Service
             var orgMap = GetOrgMap(db);
             var temp = GetFliterResult(db, ksIds, dates, feeTypes);
             var ruleMap = GetNormalRuls(db, ksIds);
+            var rateRuleMap = GetRateRuls(db, ksIds);
             var displayRuleMap = GetDisplayRules(db);
+
+            // 用于计算阶梯，因为阶梯一定是集体显示，且在普通计算规则中没有，所以可以利用普通规则计算出人数，这样可以统一逻辑
+            // 所以只需要记录一个阶梯中任意一个ksid，然后计算出来价格就行了，不要重复计算
+            // entryRateSet记录的就是集体中的一个，visitedRateSet是为了防止将一个集体中记录多次
+            var entryRateSet = new HashSet<string>();
+            var visitedRateSet = new HashSet<string>();
 
             var resultList = new List<HospitalVO>();
             var resultMap = new Dictionary<string, HospitalVO>();
@@ -79,6 +86,18 @@ namespace SettlementSystem.Service
                 AddCount(zyObj, newObj, obj.Ddzt);
                 AddCount(fyObj, newObj, obj.Ddzt);
                 AddCount(ksObj, newObj, obj.Ddzt);
+
+                if (rateRuleMap.ContainsKey(obj.Ksczid) && !visitedRateSet.Contains(obj.Ksczid))
+                {
+                    entryRateSet.Add(obj.Ksczid);
+                    visitedRateSet.UnionWith(ksObj.Id.Split(","));
+                }
+            }
+
+            // 计算阶梯值
+            foreach(var ksId in entryRateSet)
+            {
+                SetRateFee(ksId, rateRuleMap, resultMap);
             }
 
             // Sort
@@ -155,6 +174,21 @@ namespace SettlementSystem.Service
             return ruleMap;
         }
 
+        private static Dictionary<string, List<RateRulesPO>> GetRateRuls(SqlSugarClient db, string[] ksIds)
+        {
+            var rateRuls = new Dictionary<string, List<RateRulesPO>>();
+            var ksSet = new HashSet<string>(ksIds);
+            db.Queryable<RateRulesPO>()
+                            .Where(x => ksSet.Contains(x.KsId))
+                            .ToList()
+                            .ForEach(x => {
+                                if (!rateRuls.ContainsKey(x.KsId))
+                                    rateRuls[x.KsId] = new List<RateRulesPO>();
+                                rateRuls[x.KsId].Add(x);
+                            });
+            return rateRuls;
+        }
+
         private static Dictionary<string, DisplayRulesPO> GetDisplayRules(SqlSugarClient db)
         {
             var displayRuleMap = new Dictionary<string, DisplayRulesPO>();
@@ -216,6 +250,45 @@ namespace SettlementSystem.Service
             else newObj.Wjzl = obj.Count;
             newObj.Yyzl = obj.Count;
             return newObj;
+        }
+
+        public static void SetRateFee(string ksId, Dictionary<string, List<RateRulesPO>> rateRuleMap,
+            Dictionary<string, HospitalVO> resultMap)
+        {
+            // 从大到小排序，然后从后往前找第一个大于start的区间
+            rateRuleMap[ksId].Sort((x, y) => (int)(y.Start - x.Start));
+            var ksObj = resultMap[ksId];
+            double denoCount = 0, moleCount = 0;
+            var rule = rateRuleMap[ksId][0];
+            if (rule.Deno.IndexOf("qx") != -1)
+                denoCount += ksObj.Qxl;
+            if (rule.Deno.IndexOf("wdz") != -1)
+                denoCount += ksObj.Wjzl;
+            if (rule.Deno.IndexOf("yjz") != -1)
+                denoCount += ksObj.Jzl;
+
+            if (!Double.TryParse(rule.Mole, out moleCount))
+            {
+                if (rule.Mole.IndexOf("qx") != -1)
+                    moleCount += ksObj.Qxl;
+                if (rule.Mole.IndexOf("wdz") != -1)
+                    moleCount += ksObj.Wjzl;
+                if (rule.Mole.IndexOf("yjz") != -1)
+                    moleCount += ksObj.Jzl;
+            }
+
+            foreach (var tempRule in rateRuleMap[ksId])
+            {
+                if ((denoCount / moleCount) >= tempRule.Start)
+                {
+                    ksObj.Ze = denoCount * tempRule.Fee;
+                    break;
+                }
+            }
+
+            //还需要将Ze加到分院和总院
+            resultMap[ksId.Substring(0, 6)].Ze += ksObj.Ze;
+            resultMap[ksId.Substring(0, 3)].Ze += ksObj.Ze;
         }
     }
 }

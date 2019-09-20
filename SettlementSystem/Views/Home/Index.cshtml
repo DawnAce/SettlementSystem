@@ -45,8 +45,10 @@
             handleSuccess(res, file, fileList) {
                 if (res.code == "200") {
                     this.$message.success("上传成功")
+                    console.log("上传成功")
                 } else {
                     this.$message.error(res.msg)
+                    console.log("上传失败：" + res.msg)
                 }
             },
             handleSizeChange(val) {

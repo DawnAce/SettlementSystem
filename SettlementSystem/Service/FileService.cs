@@ -66,6 +66,7 @@ namespace SettlementSystem.Service
             var dao = SugarDao.GetInstance();
             GetMap(dao);
             var operationList = new List<YyxxPO>();
+            // 前三行是空行或者header
             for (int i = sheet.FirstRowNum + 3; i <= sheet.LastRowNum; ++i)
             {
                 var row = sheet.GetRow(i);
@@ -115,10 +116,11 @@ namespace SettlementSystem.Service
             
             var cellCount = row.LastCellNum;
             var map = GetMap();
-            for(int i=0; i<cellCount; ++i)
+            // 第一列是空列
+            for(int i=1; i<cellCount; ++i)
             {
-                object value = row.GetCell(i)?.ToString();
-                var fildName = Char.ToUpper(map[i][0]) + map[i].Substring(1);
+                object value = row.GetCell(i-1)?.ToString();
+                var fildName = Char.ToUpper(map[i-1][0]) + map[i-1].Substring(1);
                 if (fildName.Equals("Ghf") || fildName.Equals("yhjg"))
                 {
                     value = String.IsNullOrEmpty((string)value) ? "0" : value;
@@ -127,7 +129,7 @@ namespace SettlementSystem.Service
                 else if (fildName.Equals("Sfdz") || fildName.Equals("Sfjf") 
                     || fildName.Equals("Sfjt") || fildName.Equals("Sfjz"))
                 {
-                    value = row.GetCell(i).ToString().Equals("是");
+                    value = row.GetCell(i-1).ToString().Equals("是");
                 }
                 SetModelValue(fildName, value, result);
             }

@@ -117,10 +117,10 @@ namespace SettlementSystem.Service
             var cellCount = row.LastCellNum;
             var map = GetMap();
             // 第一列是空列
-            for(int i=1; i<cellCount; ++i)
+            for(int i=0; i<cellCount; ++i)
             {
                 object value = row.GetCell(i)?.ToString();
-                var fildName = Char.ToUpper(map[i-1][0]) + map[i-1].Substring(1);
+                var fildName = Char.ToUpper(map[i][0]) + map[i].Substring(1);
                 if (fildName.Equals("Ghf") || fildName.Equals("yhjg"))
                 {
                     value = String.IsNullOrEmpty((string)value) ? "0" : value;
@@ -131,7 +131,8 @@ namespace SettlementSystem.Service
                 {
                     value = row.GetCell(i).ToString().Equals("是");
                 }
-                else if (fildName.Equals("Fymc"))   //统一使用英文括号
+                else if (fildName.Equals("Fymc") || fildName.Equals("Zymc") 
+                    || fildName.Equals("Ks"))   //统一使用英文括号
                 {
                     value = value.ToString().Replace("（", "(");
                     value = value.ToString().Replace("）", ")");

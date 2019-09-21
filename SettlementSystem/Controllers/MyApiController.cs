@@ -88,9 +88,9 @@ namespace SettlementSystem.Controllers
 
         [HttpGet]
         [ActionName("GetHospitalTree")]
-        public string GetHospitalTree()
+        public string GetHospitalTree(bool disableHospitals)
         {
-            return JsonConvert.SerializeObject(DataService.GetHospitalTree());
+            return JsonConvert.SerializeObject(DataService.GetHospitalTree(disableHospitals));
         }
 
         // POST: api/MyApi

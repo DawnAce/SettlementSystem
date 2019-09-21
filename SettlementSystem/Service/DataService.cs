@@ -2,6 +2,7 @@
 using RestSharp;
 using SettlementSystem.Dao;
 using SettlementSystem.Models;
+using SettlementSystem.Models.PO;
 using SqlSugar;
 using System;
 using System.Collections;
@@ -47,13 +48,21 @@ namespace SettlementSystem.Service
         }
 
         /// <summary>
-        /// 归根结底还是要靠科室来进行计算查询
+        /// 归根结底还是要靠科室来进行计算查询，当需要过滤时，需要剔除一些
         /// </summary>
         /// <returns></returns>
-        public static MyResponse GetHospitalTree()
+        public static MyResponse GetHospitalTree(bool disableHospitals)
         {
+            var db = SugarDao.GetInstance();
+            var tempResult = db.Queryable<OrganizationPO>();
+            if (disableHospitals)
+            {
+                var hospitalSet = new HashSet<string>(db.GetSimpleClient<SomeValues>().GetById("ComputerHospitals").Content.Split(","));
+                tempResult.Where(x => hospitalSet.Contains(x.Id.Substring(0, 3)));
+            }
+
             //排序后，可以保证遍历顺序为：总院-分院-科室
-            var result = SugarDao.GetInstance().Queryable<OrganizationPO>().OrderBy(x => x.Id).ToList();
+            var result = tempResult.OrderBy(x => x.Id).ToList();
             var map = new Dictionary<string, JsonObject>();
             var root = new JsonObject
             {

@@ -130,7 +130,7 @@
                 });
             },
             initHospitalOptions() {
-                var url = "https://@Context.Request.Host" + "/api/MyApi/GetHospitalTree"
+                var url = "https://@Context.Request.Host" + "/api/MyApi/GetHospitalTree?disableHospitals=false"
 
                 var holder = this
                 const req = new Request(url, { method: "GET" })

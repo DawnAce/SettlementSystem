@@ -47,8 +47,8 @@ namespace Tests
         [Test]
         public void TestGetHospitalTree()
         {
-            var result = DataService.GetHospitalTree();
-            Assert.AreEqual(46, ((IList)((JsonObject)result.Data)["children"]).Count);
+            var result = DataService.GetHospitalTree(true);
+            Assert.AreEqual(14, ((IList)((JsonObject)result.Data)["children"]).Count);
 
             var str = "(";
             foreach(var array in (IList)((JsonObject)result.Data)["default"])

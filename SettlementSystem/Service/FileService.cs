@@ -133,8 +133,8 @@ namespace SettlementSystem.Service
                 }
                 else if (fildName.Equals("Fymc"))   //统一使用英文括号
                 {
-                    value = row.GetCell(i).ToString().Replace("（", "(");
-                    value = row.GetCell(i).ToString().Replace("）", ")");
+                    value = value.ToString().Replace("（", "(");
+                    value = value.ToString().Replace("）", ")");
                 }
                 SetModelValue(fildName, value, result);
             }

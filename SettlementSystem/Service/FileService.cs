@@ -119,7 +119,7 @@ namespace SettlementSystem.Service
             // 第一列是空列
             for(int i=1; i<cellCount; ++i)
             {
-                object value = row.GetCell(i-1)?.ToString();
+                object value = row.GetCell(i)?.ToString();
                 var fildName = Char.ToUpper(map[i-1][0]) + map[i-1].Substring(1);
                 if (fildName.Equals("Ghf") || fildName.Equals("yhjg"))
                 {
@@ -129,12 +129,12 @@ namespace SettlementSystem.Service
                 else if (fildName.Equals("Sfdz") || fildName.Equals("Sfjf") 
                     || fildName.Equals("Sfjt") || fildName.Equals("Sfjz"))
                 {
-                    value = row.GetCell(i-1).ToString().Equals("是");
+                    value = row.GetCell(i).ToString().Equals("是");
                 }
                 else if (fildName.Equals("Fymc"))   //统一使用英文括号
                 {
-                    value = row.GetCell(i - 1).ToString().Replace("（", "(");
-                    value = row.GetCell(i - 1).ToString().Replace("）", ")");
+                    value = row.GetCell(i).ToString().Replace("（", "(");
+                    value = row.GetCell(i).ToString().Replace("）", ")");
                 }
                 SetModelValue(fildName, value, result);
             }

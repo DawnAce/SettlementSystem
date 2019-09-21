@@ -131,9 +131,15 @@ namespace SettlementSystem.Service
                 {
                     value = row.GetCell(i-1).ToString().Equals("是");
                 }
+                else if (fildName.Equals("Fymc"))   //统一使用英文括号
+                {
+                    value = row.GetCell(i - 1).ToString().Replace("（", "(");
+                    value = row.GetCell(i - 1).ToString().Replace("）", ")");
+                }
                 SetModelValue(fildName, value, result);
             }
-            result.Ksczid = organizationMap[result.Fymc.Trim() + result.Ks.Trim()];
+            if(organizationMap.ContainsKey(result.Fymc.Trim() + result.Ks.Trim()))
+                result.Ksczid = organizationMap[result.Fymc.Trim() + result.Ks.Trim()];
             result.Id = result.Jzrq.Replace("-", "").Substring(0, 6) + result.Id;
             return result;
         }

@@ -67,7 +67,7 @@ namespace SettlementSystem.Service
             GetMap(dao);
             var operationList = new List<YyxxPO>();
             // 前三行是空行或者header
-            for (int i = sheet.FirstRowNum + 3; i <= sheet.LastRowNum; ++i)
+            for (int i = sheet.FirstRowNum + 2; i <= sheet.LastRowNum; ++i)
             {
                 var row = sheet.GetRow(i);
                 var yyxx = ParseRow(row);
